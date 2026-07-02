@@ -1,0 +1,74 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isValidActionType(data) {
+      return data.keys().hasAll(['name', 'colorTag', 'icon', 'archived', 'createdAt'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 120
+        && data.colorTag is string
+        && data.icon is string
+        && data.archived is bool;
+    }
+
+    function isOptionalString(data, field) {
+      return !(field in data) || data[field] == null || data[field] is string;
+    }
+
+    function isValidActiveTimer(data) {
+      return data.keys().hasAll(['actionTypeId', 'startTime'])
+        && data.actionTypeId is string
+        && isOptionalString(data, 'movideskLink')
+        && isOptionalString(data, 'jiraLink')
+        && isOptionalString(data, 'comments');
+    }
+
+    function isValidTimeEntry(data) {
+      return data.keys().hasAll(['actionTypeId', 'actionTypeName', 'startTime', 'durationSeconds', 'taskCreated', 'source'])
+        && data.actionTypeId is string
+        && data.actionTypeName is string
+        && data.startTime is timestamp
+        && data.durationSeconds is number && data.durationSeconds >= 0
+        && data.taskCreated is bool
+        && data.source in ['timer', 'manual'];
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && request.resource.data.email is string;
+      allow update: if isOwner(uid);
+      allow delete: if false;
+
+      match /actionTypes/{actionTypeId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && isValidActionType(request.resource.data);
+        allow update: if isOwner(uid) && isValidActionType(request.resource.data);
+        allow delete: if isOwner(uid);
+      }
+
+      match /timeEntries/{entryId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && isValidTimeEntry(request.resource.data);
+        allow update: if isOwner(uid) && isValidTimeEntry(request.resource.data);
+        allow delete: if isOwner(uid);
+      }
+
+      match /activeTimer/{docId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && docId == 'current' && isValidActiveTimer(request.resource.data);
+        allow update: if isOwner(uid) && docId == 'current' && isValidActiveTimer(request.resource.data);
+        allow delete: if isOwner(uid);
+      }
+    }
+
+    // Tudo que não bater com as regras acima é negado por padrão.
+  }
+}
