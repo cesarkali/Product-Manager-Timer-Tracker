@@ -17,17 +17,27 @@ import {
 } from "@/components/ui/dialog";
 import { IconPicker } from "@/components/action-types/icon-picker";
 import { ColorPicker } from "@/components/action-types/color-picker";
+import { ShortcutPicker } from "@/components/action-types/shortcut-picker";
 import { actionTypeSchema, type ActionTypeInput } from "@/lib/validation";
 import { ICON_KEYS } from "@/lib/icons";
+import type { ActionType } from "@/lib/types";
 
 export function ActionTypeForm({
+  actionTypes,
   onCreate,
 }: {
-  onCreate: (name: string, icon: string, colorTag?: string) => Promise<void>;
+  actionTypes: ActionType[];
+  onCreate: (
+    name: string,
+    icon: string,
+    colorTag?: string,
+    shortcutKey?: number | null
+  ) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
   const [icon, setIcon] = useState(ICON_KEYS[0]);
   const [colorTag, setColorTag] = useState("0");
+  const [shortcutKey, setShortcutKey] = useState<number | null>(null);
   const {
     register,
     handleSubmit,
@@ -35,12 +45,17 @@ export function ActionTypeForm({
     formState: { errors, isSubmitting },
   } = useForm<ActionTypeInput>({ resolver: zodResolver(actionTypeSchema) });
 
+  const usedShortcuts = new Set(
+    actionTypes.filter((a) => a.shortcutKey != null).map((a) => a.shortcutKey as number)
+  );
+
   async function onSubmit(data: ActionTypeInput) {
     try {
-      await onCreate(data.name, icon, colorTag);
+      await onCreate(data.name, icon, colorTag, shortcutKey);
       reset();
       setIcon(ICON_KEYS[0]);
       setColorTag("0");
+      setShortcutKey(null);
       setOpen(false);
     } catch {
       toast.error("Não foi possível criar a categoria.");
@@ -72,6 +87,14 @@ export function ActionTypeForm({
           <div className="flex flex-col gap-2">
             <Label>Ícone</Label>
             <IconPicker value={icon} onChange={setIcon} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label>Atalho (opcional)</Label>
+            <ShortcutPicker
+              value={shortcutKey}
+              usedByOthers={usedShortcuts}
+              onChange={setShortcutKey}
+            />
           </div>
           <DialogFooter>
             <Button

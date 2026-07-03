@@ -16,6 +16,8 @@ export interface ActionType {
   icon: string;
   archived: boolean;
   order: number;
+  /** Tecla numérica (1-9) para iniciar essa categoria direto no cronômetro. */
+  shortcutKey?: number | null;
   createdAt: Timestamp;
 }
 

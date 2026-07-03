@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { IconPicker } from "@/components/action-types/icon-picker";
 import { ColorPicker } from "@/components/action-types/color-picker";
+import { ShortcutPicker } from "@/components/action-types/shortcut-picker";
 import { CategoryIcon } from "@/lib/icons";
 import { categoryColor } from "@/lib/palette";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,7 @@ export function ActionTypeTable({
   onRename,
   onIconChange,
   onColorChange,
+  onShortcutChange,
   onArchiveToggle,
   onReorder,
   onDelete,
@@ -38,6 +40,7 @@ export function ActionTypeTable({
   onRename: (id: string, name: string) => Promise<void>;
   onIconChange: (id: string, icon: string) => Promise<void>;
   onColorChange: (id: string, colorTag: string) => Promise<void>;
+  onShortcutChange: (id: string, shortcutKey: number | null) => Promise<void>;
   onArchiveToggle: (id: string, archived: boolean) => Promise<void>;
   onReorder: (orderedIds: string[]) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -74,6 +77,7 @@ export function ActionTypeTable({
           <TableHead className="w-10" />
           <TableHead>Cor</TableHead>
           <TableHead className="w-full">Categoria</TableHead>
+          <TableHead>Atalho</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="text-right">Ações</TableHead>
         </TableRow>
@@ -177,6 +181,19 @@ export function ActionTypeTable({
                     </button>
                   )}
                 </div>
+              </TableCell>
+              <TableCell>
+                <ShortcutPicker
+                  value={actionType.shortcutKey}
+                  usedByOthers={
+                    new Set(
+                      actionTypes
+                        .filter((a) => a.id !== actionType.id && a.shortcutKey != null)
+                        .map((a) => a.shortcutKey as number)
+                    )
+                  }
+                  onChange={(shortcutKey) => onShortcutChange(actionType.id, shortcutKey)}
+                />
               </TableCell>
               <TableCell>
                 <Badge variant={actionType.archived ? "secondary" : "outline"}>

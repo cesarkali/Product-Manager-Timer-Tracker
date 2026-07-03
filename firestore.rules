@@ -11,17 +11,22 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    function isOptionalString(data, field) {
+      return !(field in data) || data[field] == null || data[field] is string;
+    }
+
+    function isOptionalNumber(data, field) {
+      return !(field in data) || data[field] == null || data[field] is number;
+    }
+
     function isValidActionType(data) {
       return data.keys().hasAll(['name', 'colorTag', 'icon', 'archived', 'order', 'createdAt'])
         && data.name is string && data.name.size() > 0 && data.name.size() <= 120
         && data.colorTag is string
         && data.icon is string
         && data.archived is bool
-        && data.order is number;
-    }
-
-    function isOptionalString(data, field) {
-      return !(field in data) || data[field] == null || data[field] is string;
+        && data.order is number
+        && isOptionalNumber(data, 'shortcutKey');
     }
 
     function isValidTasksField(data) {

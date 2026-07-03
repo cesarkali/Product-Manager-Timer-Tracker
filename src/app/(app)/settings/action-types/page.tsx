@@ -16,6 +16,7 @@ export default function ActionTypesPage() {
     renameActionType,
     setActionTypeIcon,
     setActionTypeColor,
+    setActionTypeShortcut,
     setArchived,
     reorderActionTypes,
     deleteActionType,
@@ -42,11 +43,12 @@ export default function ActionTypesPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Categorias</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             As atividades recorrentes que você cronometra. Clique no ícone para trocar, na
-            bolinha de cor para recolorir, no nome para renomear, e arraste pela alça à
-            esquerda para reordenar como aparecem no cronômetro.
+            bolinha de cor para recolorir, no nome para renomear, escolha um atalho (1-9)
+            para iniciar direto pelo teclado no cronômetro, e arraste pela alça à esquerda
+            para reordenar.
           </p>
         </div>
-        <ActionTypeForm onCreate={createActionType} />
+        <ActionTypeForm actionTypes={actionTypes} onCreate={createActionType} />
       </div>
       <Card>
         <CardContent>
@@ -71,6 +73,7 @@ export default function ActionTypesPage() {
                 onRename={renameActionType}
                 onIconChange={setActionTypeIcon}
                 onColorChange={setActionTypeColor}
+                onShortcutChange={setActionTypeShortcut}
                 onArchiveToggle={setArchived}
                 onReorder={reorderActionTypes}
                 onDelete={deleteActionType}

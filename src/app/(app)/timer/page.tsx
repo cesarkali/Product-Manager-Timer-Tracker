@@ -27,8 +27,8 @@ export default function TimerPage() {
         <div>
           <h2 className="text-lg font-semibold">Categorias</h2>
           <p className="text-sm text-muted-foreground">
-            Escolha uma para começar a cronometrar. Trocar de categoria com o cronômetro
-            rodando salva automaticamente o registro anterior.
+            Escolha uma para começar a cronometrar (ou pressione as teclas 1-9). Trocar de
+            categoria com o cronômetro rodando salva automaticamente o registro anterior.
           </p>
         </div>
         {loadingTypes ? (

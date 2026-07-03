@@ -82,16 +82,24 @@ export function useActionTypes() {
     return map;
   }, [actionTypes]);
 
-  async function createActionType(name: string, icon: string, colorTag?: string) {
+  async function createActionType(
+    name: string,
+    icon: string,
+    colorTag?: string,
+    shortcutKey?: number | null
+  ) {
     if (!user) return;
     const ref = collection(db, "users", user.uid, "actionTypes");
     const maxOrder = actionTypes.reduce((max, a) => Math.max(max, a.order ?? 0), -1);
+    const hasConflict =
+      shortcutKey != null && actionTypes.some((a) => a.shortcutKey === shortcutKey);
     await addDoc(ref, {
       name,
       icon,
       colorTag: colorTag ?? String(actionTypes.length % 8),
       archived: false,
       order: maxOrder + 1,
+      shortcutKey: hasConflict ? null : (shortcutKey ?? null),
       createdAt: serverTimestamp(),
     });
   }
@@ -109,6 +117,21 @@ export function useActionTypes() {
   async function setActionTypeColor(id: string, colorTag: string) {
     if (!user) return;
     await updateDoc(doc(db, "users", user.uid, "actionTypes", id), { colorTag });
+  }
+
+  /**
+   * Define o atalho numérico (1-9) de uma categoria. Recusa silenciosamente
+   * se outra categoria já usa a mesma tecla — a UI deve impedir escolher um
+   * atalho já ocupado antes mesmo de chamar isso, mas a checagem aqui evita
+   * inconsistência caso duas abas editem ao mesmo tempo.
+   */
+  async function setActionTypeShortcut(id: string, shortcutKey: number | null) {
+    if (!user) return;
+    if (shortcutKey != null) {
+      const conflict = actionTypes.some((a) => a.id !== id && a.shortcutKey === shortcutKey);
+      if (conflict) return;
+    }
+    await updateDoc(doc(db, "users", user.uid, "actionTypes", id), { shortcutKey });
   }
 
   async function setArchived(id: string, archived: boolean) {
@@ -170,6 +193,7 @@ export function useActionTypes() {
     renameActionType,
     setActionTypeIcon,
     setActionTypeColor,
+    setActionTypeShortcut,
     setArchived,
     reorderActionTypes,
     deleteActionType,
