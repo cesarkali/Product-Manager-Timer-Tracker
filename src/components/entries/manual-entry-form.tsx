@@ -38,6 +38,7 @@ export function ManualEntryForm({
       startTime: "",
       endTime: "",
       notes: "",
+      pausedSeconds: 0,
     },
   });
 
@@ -53,6 +54,7 @@ export function ManualEntryForm({
         taskCreated: data.taskCreated,
         tasks: data.tasks,
         notes: data.notes || null,
+        pausedSeconds: data.pausedSeconds ?? 0,
       });
       reset({
         date: data.date,
@@ -61,6 +63,7 @@ export function ManualEntryForm({
         startTime: "",
         endTime: "",
         tasks: [],
+        pausedSeconds: 0,
       });
       toast.success("Registro adicionado.");
     } catch {

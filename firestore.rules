@@ -19,6 +19,10 @@ service cloud.firestore {
       return !(field in data) || data[field] == null || data[field] is number;
     }
 
+    function isOptionalTimestamp(data, field) {
+      return !(field in data) || data[field] == null || data[field] is timestamp;
+    }
+
     function isValidActionType(data) {
       return data.keys().hasAll(['name', 'colorTag', 'icon', 'archived', 'order', 'createdAt'])
         && data.name is string && data.name.size() > 0 && data.name.size() <= 120
@@ -37,7 +41,9 @@ service cloud.firestore {
       return data.keys().hasAll(['actionTypeId', 'startTime'])
         && data.actionTypeId is string
         && isValidTasksField(data)
-        && isOptionalString(data, 'comments');
+        && isOptionalString(data, 'comments')
+        && isOptionalTimestamp(data, 'pausedAt')
+        && isOptionalNumber(data, 'accumulatedPausedSeconds');
     }
 
     function isValidTimeEntry(data) {
@@ -48,7 +54,8 @@ service cloud.firestore {
         && data.durationSeconds is number && data.durationSeconds >= 0
         && data.taskCreated is bool
         && data.source in ['timer', 'manual']
-        && isValidTasksField(data);
+        && isValidTasksField(data)
+        && isOptionalNumber(data, 'pausedSeconds');
     }
 
     match /users/{uid} {

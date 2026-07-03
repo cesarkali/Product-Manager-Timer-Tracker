@@ -27,6 +27,10 @@ export interface ManualEntryData {
   taskCreated: boolean;
   tasks: LinkedTask[];
   notes: string | null;
+  /** Segundos pausados a descontar de `endTime - startTime` (só relevante ao
+   * editar um registro vindo do cronômetro que foi pausado; nunca preenchido
+   * por lançamento manual). */
+  pausedSeconds?: number;
 }
 
 export function useTimeEntries(range: DateRange) {
@@ -57,7 +61,8 @@ export function useTimeEntries(range: DateRange) {
     if (!user) return;
     const durationSeconds = Math.max(
       0,
-      Math.round((data.endTime.getTime() - data.startTime.getTime()) / 1000)
+      Math.round((data.endTime.getTime() - data.startTime.getTime()) / 1000) -
+        (data.pausedSeconds ?? 0)
     );
     await addDoc(collection(db, "users", user.uid, "timeEntries"), {
       actionTypeId: data.actionTypeId,
@@ -65,6 +70,7 @@ export function useTimeEntries(range: DateRange) {
       startTime: Timestamp.fromDate(data.startTime),
       endTime: Timestamp.fromDate(data.endTime),
       durationSeconds,
+      pausedSeconds: data.pausedSeconds ?? 0,
       taskCreated: data.taskCreated || data.tasks.some((task) => task.type === "jira"),
       tasks: data.tasks,
       notes: data.notes,
@@ -87,9 +93,12 @@ export function useTimeEntries(range: DateRange) {
 
   async function updateEntryFull(id: string, data: ManualEntryData) {
     if (!user) return;
+    // Desconta o tempo pausado (se o registro veio do cronômetro e foi
+    // pausado) para editar sem reintroduzir esse intervalo na duração.
     const durationSeconds = Math.max(
       0,
-      Math.round((data.endTime.getTime() - data.startTime.getTime()) / 1000)
+      Math.round((data.endTime.getTime() - data.startTime.getTime()) / 1000) -
+        (data.pausedSeconds ?? 0)
     );
     await updateDoc(doc(db, "users", user.uid, "timeEntries", id), {
       actionTypeId: data.actionTypeId,
@@ -97,6 +106,7 @@ export function useTimeEntries(range: DateRange) {
       startTime: Timestamp.fromDate(data.startTime),
       endTime: Timestamp.fromDate(data.endTime),
       durationSeconds,
+      pausedSeconds: data.pausedSeconds ?? 0,
       taskCreated: data.taskCreated || data.tasks.some((task) => task.type === "jira"),
       tasks: data.tasks,
       notes: data.notes,

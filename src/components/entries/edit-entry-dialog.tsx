@@ -59,6 +59,7 @@ export function EditEntryDialog({
           taskCreated: entry.taskCreated,
           tasks: entry.tasks ?? [],
           notes: entry.notes ?? "",
+          pausedSeconds: entry.pausedSeconds ?? 0,
         }
       : undefined,
   });
@@ -76,6 +77,7 @@ export function EditEntryDialog({
         taskCreated: data.taskCreated,
         tasks: data.tasks,
         notes: data.notes || null,
+        pausedSeconds: data.pausedSeconds ?? 0,
       });
       toast.success("Registro atualizado.");
       onOpenChange(false);
@@ -86,12 +88,12 @@ export function EditEntryDialog({
 
   return (
     <Dialog open={entry != null} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] w-[95vw] max-w-4xl overflow-y-auto sm:max-w-4xl">
+      <DialogContent className="max-h-[90vh] w-[95vw] max-w-4xl overflow-y-auto sm:max-w-4xl lg:max-w-5xl">
         <DialogHeader>
           <DialogTitle>Editar registro</DialogTitle>
         </DialogHeader>
         {entry && (
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+          <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
             <EntryFormFields
               actionTypes={actionTypes}
               frozenActionTypeName={entry.actionTypeName}
@@ -99,6 +101,7 @@ export function EditEntryDialog({
               watch={watch}
               setValue={setValue}
               errors={errors}
+              showPausedTime
             />
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

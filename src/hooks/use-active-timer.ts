@@ -22,6 +22,19 @@ export interface ActiveTimerFields {
   comments: string | null;
 }
 
+/** Tempo decorrido (ms) de um cronômetro, descontando os intervalos pausados.
+ * Congelado em `pausedAt` enquanto pausado — não avança com `nowMs`. Docs
+ * criados antes da funcionalidade de pausa não têm `pausedAt`/
+ * `accumulatedPausedSeconds`, então tratamos como "nunca pausado". `startTime`
+ * usa `serverTimestamp()` e fica momentaneamente `null` no snapshot local até
+ * o servidor confirmar — nesse instante retornamos 0 em vez de estourar. */
+export function computeElapsedMs(activeTimer: ActiveTimer, nowMs: number): number {
+  if (!activeTimer.startTime) return 0;
+  const accumulatedPausedMs = (activeTimer.accumulatedPausedSeconds ?? 0) * 1000;
+  const referenceMs = activeTimer.pausedAt ? activeTimer.pausedAt.toMillis() : nowMs;
+  return Math.max(0, referenceMs - activeTimer.startTime.toMillis() - accumulatedPausedMs);
+}
+
 export function useActiveTimer() {
   const { user } = useAuth();
   const [activeTimer, setActiveTimer] = useState<ActiveTimer | null>(null);
@@ -39,15 +52,13 @@ export function useActiveTimer() {
   }, [user]);
 
   useEffect(() => {
-    if (!activeTimer) return;
+    if (!activeTimer || activeTimer.pausedAt) return;
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, [activeTimer]);
 
-  const elapsedSeconds =
-    activeTimer && activeTimer.startTime
-      ? Math.max(0, Math.floor((now - activeTimer.startTime.toMillis()) / 1000))
-      : 0;
+  const isPaused = Boolean(activeTimer?.pausedAt);
+  const elapsedSeconds = activeTimer ? Math.floor(computeElapsedMs(activeTimer, now) / 1000) : 0;
 
   async function startTimer(nextActionType: ActionType, previousActionType?: ActionType | null) {
     if (!user) return;
@@ -58,11 +69,9 @@ export function useActiveTimer() {
     if (activeTimer) {
       const entryRef = doc(collection(db, "users", user.uid, "timeEntries"));
       const startedAt = activeTimer.startTime.toDate();
-      const endedAt = new Date();
-      const durationSeconds = Math.max(
-        0,
-        Math.round((endedAt.getTime() - startedAt.getTime()) / 1000)
-      );
+      // Se estava pausado, o fim real do trabalho é o momento da pausa, não agora.
+      const endedAt = activeTimer.pausedAt ? activeTimer.pausedAt.toDate() : new Date();
+      const durationSeconds = Math.round(computeElapsedMs(activeTimer, endedAt.getTime()) / 1000);
       const previousTasks = activeTimer.tasks ?? [];
       batch.set(entryRef, {
         actionTypeId: activeTimer.actionTypeId,
@@ -70,6 +79,7 @@ export function useActiveTimer() {
         startTime: Timestamp.fromDate(startedAt),
         endTime: Timestamp.fromDate(endedAt),
         durationSeconds,
+        pausedSeconds: activeTimer.accumulatedPausedSeconds ?? 0,
         taskCreated: previousTasks.some((task) => task.type === "jira"),
         tasks: previousTasks,
         notes: activeTimer.comments ?? null,
@@ -85,6 +95,8 @@ export function useActiveTimer() {
       startTime: serverTimestamp(),
       tasks: [],
       comments: null,
+      pausedAt: null,
+      accumulatedPausedSeconds: 0,
     });
 
     await batch.commit();
@@ -102,11 +114,9 @@ export function useActiveTimer() {
     const activeTimerRef = doc(db, "users", user.uid, "activeTimer", "current");
     const entryRef = doc(collection(db, "users", user.uid, "timeEntries"));
     const startedAt = activeTimer.startTime.toDate();
-    const endedAt = new Date();
-    const durationSeconds = Math.max(
-      0,
-      Math.round((endedAt.getTime() - startedAt.getTime()) / 1000)
-    );
+    // Se estava pausado, o fim real do trabalho é o momento da pausa, não agora.
+    const endedAt = activeTimer.pausedAt ? activeTimer.pausedAt.toDate() : new Date();
+    const durationSeconds = Math.round(computeElapsedMs(activeTimer, endedAt.getTime()) / 1000);
 
     const tasks = activeTimer.tasks ?? [];
     batch.set(entryRef, {
@@ -115,6 +125,7 @@ export function useActiveTimer() {
       startTime: Timestamp.fromDate(startedAt),
       endTime: Timestamp.fromDate(endedAt),
       durationSeconds,
+      pausedSeconds: activeTimer.accumulatedPausedSeconds ?? 0,
       taskCreated: tasks.some((task) => task.type === "jira"),
       tasks,
       notes: activeTimer.comments ?? null,
@@ -126,6 +137,25 @@ export function useActiveTimer() {
 
     await batch.commit();
     toast.success(`Parou "${actionTypeName}" (${formatDuration(durationSeconds)})`);
+  }
+
+  async function pauseTimer() {
+    if (!user || !activeTimer || activeTimer.pausedAt) return;
+    await updateDoc(doc(db, "users", user.uid, "activeTimer", "current"), {
+      pausedAt: serverTimestamp(),
+    });
+  }
+
+  async function resumeTimer() {
+    if (!user || !activeTimer || !activeTimer.pausedAt) return;
+    const pausedSpanSeconds = Math.max(
+      0,
+      Math.round((Date.now() - activeTimer.pausedAt.toMillis()) / 1000)
+    );
+    await updateDoc(doc(db, "users", user.uid, "activeTimer", "current"), {
+      pausedAt: null,
+      accumulatedPausedSeconds: (activeTimer.accumulatedPausedSeconds ?? 0) + pausedSpanSeconds,
+    });
   }
 
   async function updateActiveTimerFields(patch: Partial<ActiveTimerFields>) {
@@ -150,8 +180,11 @@ export function useActiveTimer() {
     activeTimer,
     loading,
     elapsedSeconds,
+    isPaused,
     startTimer,
     stopTimer,
+    pauseTimer,
+    resumeTimer,
     updateActiveTimerFields,
     discardTimer,
   };

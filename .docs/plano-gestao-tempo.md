@@ -20,9 +20,17 @@ para justificar prioridades, carga de trabalho ou um aumento.
 - **Marcação de task criada**: automática quando há task Jira vinculada (Movidesk sozinho
   não conta — é tratado como chamado de origem, não como a task de trabalho), mais um
   checkbox manual como reforço.
-- **Complexidade**: story points (escala Fibonacci: 1, 2, 3, 5, 8, 13, 21) por task
+- **Complexidade**: story points (escala Fibonacci: 0, 1, 2, 3, 5, 8, 13, 21) por task
   vinculada, não por registro — um registro pode ter várias tasks, cada uma com sua
-  própria pontuação.
+  própria pontuação. **0 é o valor padrão de seleção** ao adicionar uma task nova (antes
+  era 1) — cobre o caso de tickets que não precisam de pontuação definida, sem forçar uma
+  escolha arbitrária.
+- **Pausar cronômetro**: o cronômetro em andamento pode ser pausado (e retomado depois)
+  sem encerrar o registro — para quando surge outra coisa no meio do trabalho. Tempo
+  pausado nunca conta como tempo trabalhado (ver §Lógica do timer). Esse tempo pausado
+  fica visível e editável (min/seg, com opção de zerar) no modal de edição do registro,
+  a seu pedido — não aparece no lançamento manual, só faz sentido para registros vindos
+  do cronômetro.
 - **Categorias de ação**: você mesmo cadastra e gerencia (CRUD), com ícone, cor e ordem
   de exibição customizáveis; não é lista fixa do sistema.
 - **Datas**: sempre com dia, mês **e ano** visíveis — nunca só "dd/mm", para não gerar
@@ -85,11 +93,20 @@ users/{uid}                              perfil — criado no primeiro login (la
                                           { email, name, role: 'pm', createdAt, hasSeededActionTypes? }
 users/{uid}/actionTypes/{id}             { name, colorTag, icon, archived, order, createdAt }
 users/{uid}/timeEntries/{id}             { actionTypeId, actionTypeName, startTime, endTime,
-                                            durationSeconds, taskCreated, tasks: LinkedTask[], notes,
-                                            source: 'timer'|'manual', createdAt, updatedAt }
-users/{uid}/activeTimer/current          { actionTypeId, startTime, tasks: LinkedTask[], comments }
+                                            durationSeconds, pausedSeconds, taskCreated,
+                                            tasks: LinkedTask[], notes, source: 'timer'|'manual',
+                                            createdAt, updatedAt }
+                                          pausedSeconds é opcional (0/ausente em registros manuais
+                                          e em registros antigos) — nunca aparece na UI, só existe
+                                          para que editar um registro pausado recalcule
+                                          `durationSeconds` corretamente (ver §Lógica do timer)
+users/{uid}/activeTimer/current          { actionTypeId, startTime, tasks: LinkedTask[], comments,
+                                            pausedAt, accumulatedPausedSeconds }
                                           documento SÓ existe quando há cronômetro rodando
-                                          (parar = deletar o doc)
+                                          (parar = deletar o doc). pausedAt/
+                                          accumulatedPausedSeconds são opcionais (ausentes em
+                                          docs criados antes da funcionalidade de pausa — ver
+                                          §Lógica do timer)
 ```
 
 `LinkedTask` (não é subcoleção, é um array embutido no próprio documento):
@@ -98,7 +115,7 @@ users/{uid}/activeTimer/current          { actionTypeId, startTime, tasks: Linke
 interface LinkedTask {
   type: "jira" | "movidesk";
   reference: string;      // link ou identificador da task
-  storyPoints: 1 | 2 | 3 | 5 | 8 | 13 | 21;   // escala Fibonacci
+  storyPoints: 0 | 1 | 2 | 3 | 5 | 8 | 13 | 21;   // escala Fibonacci, 0 = sem pontuação (padrão)
 }
 ```
 
@@ -169,8 +186,8 @@ repck/
     │   ├── timer/{timer-card,action-type-grid,active-timer-indicator}.tsx
     │   ├── entries/
     │   │   ├── manual-entry-form.tsx      usa EntryFormFields
-    │   │   ├── entry-form-fields.tsx      campos compartilhados entre criação e edição (RHF), grid de 12 colunas
-    │   │   ├── edit-entry-dialog.tsx      modal de edição completa de um registro existente
+    │   │   ├── entry-form-fields.tsx      campos compartilhados entre criação e edição (RHF), grid responsivo por container query (@container)
+    │   │   ├── edit-entry-dialog.tsx      modal de edição completa de um registro existente (sm:max-w-4xl lg:max-w-5xl)
     │   │   └── entries-table.tsx          tabela com coluna de comentário (tooltip + modal) e ação Editar
     │   ├── action-types/
     │   │   ├── action-type-form.tsx       criação de categoria (nome + ícone)
@@ -232,17 +249,26 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    function isOptionalString(data, field) {
+      return !(field in data) || data[field] == null || data[field] is string;
+    }
+
+    function isOptionalNumber(data, field) {
+      return !(field in data) || data[field] == null || data[field] is number;
+    }
+
+    function isOptionalTimestamp(data, field) {
+      return !(field in data) || data[field] == null || data[field] is timestamp;
+    }
+
     function isValidActionType(data) {
       return data.keys().hasAll(['name', 'colorTag', 'icon', 'archived', 'order', 'createdAt'])
         && data.name is string && data.name.size() > 0 && data.name.size() <= 120
         && data.colorTag is string
         && data.icon is string
         && data.archived is bool
-        && data.order is number;
-    }
-
-    function isOptionalString(data, field) {
-      return !(field in data) || data[field] == null || data[field] is string;
+        && data.order is number
+        && isOptionalNumber(data, 'shortcutKey');
     }
 
     function isValidTasksField(data) {
@@ -253,7 +279,9 @@ service cloud.firestore {
       return data.keys().hasAll(['actionTypeId', 'startTime'])
         && data.actionTypeId is string
         && isValidTasksField(data)
-        && isOptionalString(data, 'comments');
+        && isOptionalString(data, 'comments')
+        && isOptionalTimestamp(data, 'pausedAt')
+        && isOptionalNumber(data, 'accumulatedPausedSeconds');
     }
 
     function isValidTimeEntry(data) {
@@ -264,7 +292,8 @@ service cloud.firestore {
         && data.durationSeconds is number && data.durationSeconds >= 0
         && data.taskCreated is bool
         && data.source in ['timer', 'manual']
-        && isValidTasksField(data);
+        && isValidTasksField(data)
+        && isOptionalNumber(data, 'pausedSeconds');
     }
 
     match /users/{uid} {
@@ -308,9 +337,19 @@ Testar no "Rules playground" do console (Firestore → Rules) antes de confiar e
 > 2. Cronômetro ativo e registros de tempo trocaram o antigo par `movideskLink`/
 >    `jiraLink` por um campo único `tasks` (lista de `LinkedTask`), e ganharam
 >    comentários (`comments` no cronômetro ativo / `notes` no registro final).
-> 3. **Mais recente**: categorias ganharam campo `order` (number, obrigatório) para
->    suportar reordenação manual/drag-and-drop. Se você vir `Missing or insufficient
->    permissions` ao criar, editar, reordenar ou trocar cor/ícone de uma categoria,
+> 3. Categorias ganharam campo `order` (number, obrigatório) para suportar reordenação
+>    manual/drag-and-drop.
+> 4. Categorias ganharam campo opcional `shortcutKey` (tecla numérica 1-9 para iniciar
+>    direto no cronômetro).
+> 5. Cronômetro ativo ganhou os campos opcionais `pausedAt` e
+>    `accumulatedPausedSeconds`, para suportar pausar/retomar sem perder o registro em
+>    andamento.
+> 6. **Mais recente**: registros de tempo ganharam o campo opcional `pausedSeconds`
+>    (tempo pausado descontado de `endTime - startTime`), gravado ao fechar um registro
+>    vindo do cronômetro e usado para não recalcular a duração errada ao editar um
+>    registro que teve pausas (ver §Lógica do timer). Se você vir `Missing or
+>    insufficient permissions` ao criar, editar, reordenar ou trocar cor/ícone de uma
+>    categoria, ao pausar/retomar o cronômetro, ou ao editar um registro,
 >    confira se esta versão das regras já está publicada no console.
 
 ### Variáveis de ambiente
@@ -354,6 +393,46 @@ reintroduziria exatamente o atrito que o sistema existe pra eliminar) — o feed
 toast ("Parou anterior (12m) · Iniciou 'Task criada'"). "Retomar após refresh" sai de
 graça: o tempo decorrido é sempre recalculado a partir do `startTime` salvo no Firestore,
 nunca de estado local do React.
+
+**Pausar/retomar** (`pauseTimer`/`resumeTimer` em `use-active-timer.ts`): pausar grava só
+`pausedAt: serverTimestamp()` no doc `activeTimer/current` (não fecha/cria nenhum
+`timeEntry`); retomar soma o intervalo pausado (`now - pausedAt`) em
+`accumulatedPausedSeconds` e zera `pausedAt`. O tempo decorrido exibido (`computeElapsedMs`,
+exportado de `use-active-timer.ts` e reaproveitado pelo relógio grande do `TimerCard`) é
+sempre `(referência − startTime − accumulatedPausedSeconds)`, onde a referência é
+`pausedAt` (congelado, não avança) quando pausado, ou "agora" quando rodando — por isso o
+relógio para de andar visualmente durante a pausa sem precisar de nenhum estado local
+adicional. Ao finalmente trocar de categoria ou apertar "Parar" enquanto pausado, o
+`timeEntry` fechado usa `pausedAt` como `endTime` (não o momento real do clique) e
+`durationSeconds` já vem descontado do tempo pausado — o intervalo entre a pausa e a ação
+final nunca é contado como trabalho. `pausedAt`/`accumulatedPausedSeconds` são campos
+opcionais no documento e no tipo `ActiveTimer`: um `activeTimer/current` criado antes desta
+funcionalidade (ou já em andamento no momento do deploy) simplesmente não tem esses campos,
+e todo o cálculo trata a ausência deles como "nunca foi pausado" — nenhum cronômetro ou
+registro em andamento é perdido na migração.
+
+`computeElapsedMs` também trata `startTime` ausente retornando 0 em vez de estourar: como
+`startTime` usa `serverTimestamp()`, o snapshot local mostra `null` por uma fração de
+segundo até o servidor confirmar, e `ActiveTimerIndicator`/`Sidebar` já leem `activeTimer`
+nesse instante (bug real encontrado em produção nesta sessão — corrigido).
+
+**Editar um registro que teve pausas** (`updateEntryFull` em `use-time-entries.ts`): se o
+cronômetro foi pausado e *retomado* mais de uma vez antes de parar (não parado *durante*
+uma pausa), `endTime - startTime` volta a incluir os intervalos pausados — só o
+`durationSeconds` gravado na hora estava correto. Por isso o campo `pausedSeconds` (soma de
+`accumulatedPausedSeconds` no momento em que o registro foi fechado) é persistido em todo
+`timeEntry` de origem `timer` e usado para recalcular a duração:
+`durationSeconds = (endTime − startTime) − pausedSeconds`, tanto na criação manual
+(`addManualEntry`, onde normalmente é 0) quanto na edição (`updateEntryFull`).
+
+O campo é **visível e editável** no modal de edição (`EditEntryDialog` → `EntryFormFields`
+com `showPausedTime`): dois campos numéricos (min/seg) logo abaixo de Início/Término, com
+botão "Zerar" para remover a pausa registrada, e validação (`manualEntrySchema`) impedindo
+um valor maior que o intervalo início–término. Só aparece na edição — o lançamento manual
+(`ManualEntryForm`) não mostra o campo (não faz sentido sem cronômetro), mas ele existe no
+schema/tipo compartilhado com valor fixo `0`. Registros manuais e registros antigos (de
+antes desta correção) não têm `pausedSeconds` — tratado como `0`, comportamento idêntico ao
+anterior.
 
 Ao fechar um registro (troca de categoria ou "Parar"), `taskCreated` é calculado
 automaticamente como `tasks.some(t => t.type === "jira")` — só uma task do tipo Jira
@@ -458,10 +537,25 @@ Todas editáveis (nome, ícone, cor, ordem) ou removíveis depois pela própria 
   `DialogContent`, fazendo a tela toda "pular" quando o picker abre dentro de um modal).
 - **Edição completa de registro** (`EditEntryDialog`): reaproveita os mesmos campos do
   formulário de criação (`EntryFormFields`, compartilhado via `react-hook-form`
-  `control`/`watch`/`setValue`) — categoria, data, início/término, tasks vinculadas e
-  comentário. Grid de 12 colunas (`lg:grid-cols-12`) com proporções ajustadas: Categoria
-  4/12 (precisa de mais espaço para nomes longos), Data 3/12, Início 2/12 (só cabe
-  "HH:mm:ss"), Término 3/12; Tasks/Comentários/checkbox ocupam a linha inteira.
+  `control`/`watch`/`setValue`) — categoria, data, início/término, tempo pausado, tasks
+  vinculadas e comentário. Grid de 12 colunas com proporções ajustadas: Categoria 4/12
+  (precisa de mais espaço para nomes longos), Data 3/12, Início 2/12 (só cabe "HH:mm:ss"),
+  Término 3/12; tempo pausado, tasks, comentário e checkbox ocupam a linha inteira.
+- **Responsividade por container query, não por viewport**: `EntryFormFields` envolve seu
+  próprio grid num `@container` e usa variantes `@sm:`/`@lg:` (nativas do Tailwind v4) em
+  vez de `sm:`/`lg:`. Motivo: o mesmo componente é renderizado dentro do `Card` de
+  lançamento manual em `/entries` (largura ≈ conteúdo da página) **e** dentro do
+  `DialogContent` do modal de edição (largura própria, limitada por `max-w-*`, não pela
+  viewport) — breakpoints de viewport faziam o grid empilhar em 1 coluna dentro de um
+  modal relativamente largo só porque a *janela do navegador* era estreita, mesmo com
+  espaço de sobra dentro do modal. Como o `@container` fica no próprio componente (não no
+  chamador), os dois usos ganham a responsividade certa automaticamente, sem duplicar
+  configuração.
+- **Tempo pausado no modal de edição**: cartão com borda/fundo âmbar (mesma cor do badge
+  "Pausado" do cronômetro), campos min/seg centralizados em fonte mono sem as setinhas
+  nativas do `<input type="number">`, e botão "Zerar" (ícone) que só aparece quando há
+  tempo pausado > 0. Só renderizado quando `EntryFormFields` recebe `showPausedTime`
+  (só o `EditEntryDialog` passa essa prop — o lançamento manual não mostra o campo).
 - Recebe a lista **completa** de categorias (`actionTypes`, não só `activeActionTypes`),
   porque um registro antigo pode referenciar uma categoria já arquivada ou excluída — se
   receber só a lista ativa, o `Select` não encontra correspondência e cai no valor bruto
@@ -591,6 +685,36 @@ Registrado para não repetir os mesmos diagnósticos no futuro.
     `requestAnimationFrame` escrevendo direto no `textContent` do DOM, sem `setState` a
     cada frame — evita re-renderizar a árvore inteira dezenas de vezes por segundo. O
     indicador compacto (sidebar/menu mobile) continua só em segundos.
+15. **`Cannot read properties of null (reading 'toMillis')` no indicador de cronômetro**:
+    ao extrair `computeElapsedMs` (para a funcionalidade de pausar/retomar), a guarda
+    contra `activeTimer.startTime` vir `null` foi perdida — `startTime` usa
+    `serverTimestamp()` e fica `null` no snapshot local por uma fração de segundo até o
+    servidor confirmar, e o `ActiveTimerIndicator` (sempre montado na sidebar) lê
+    `activeTimer` nesse instante. Corrigido com `if (!activeTimer.startTime) return 0;`
+    no início de `computeElapsedMs` (ver §Lógica do timer).
+16. **Duração errada ao editar um registro que teve pausas**: `updateEntryFull`
+    recalculava `durationSeconds` só como `endTime - startTime`, que volta a incluir
+    qualquer intervalo pausado quando o cronômetro foi retomado (não parado durante a
+    pausa). Corrigido persistindo `pausedSeconds` no `timeEntry` e subtraindo esse valor
+    no recálculo — ver §Lógica do timer, "Editar um registro que teve pausas".
+17. **Modal de edição colapsando para ~384px de largura**: uma limpeza de classes
+    removeu por engano o `sm:max-w-4xl` de `DialogContent`, achando redundante com
+    `max-w-4xl` — mas o componente base do modal já vem com `sm:max-w-sm` embutido, que
+    "ganha" do `max-w-4xl` sem prefixo a partir de 640px de viewport (mesma
+    especificidade, breakpoint mais específico). Isso fazia a `LinkedTasksEditor` quebrar
+    linha a linha (Select, Input e pontos empilhados) mesmo com bastante espaço
+    disponível. Corrigido explicitando `sm:max-w-4xl lg:max-w-5xl` no `DialogContent`.
+18. **Scrollbar nativa branca em áreas escuras** (textarea de comentários, corpo do
+    modal): faltava a propriedade CSS `color-scheme`. Sem ela, o navegador desenha
+    widgets nativos (scrollbar, controles de formulário não customizados) no tema claro
+    do sistema operacional mesmo com toda a UI pintada de escuro via CSS/Tailwind — os
+    dois são independentes. Corrigido com `color-scheme: dark` no bloco `.dark` de
+    `globals.css`, complementado por uma classe utilitária `.scrollbar-thin`
+    (`scrollbar-color`/`::-webkit-scrollbar-thumb` usando `color-mix` sobre
+    `--muted-foreground`) aplicada no `Textarea`.
+19. **Aviso de LCP no console para a logo da sidebar**: `next/image` avisava que
+    `/icon.svg` (sempre visível, acima da dobra) era o elemento de LCP mas não tinha
+    prioridade de carregamento. Corrigido com a prop `priority` no `Image` do `Sidebar`.
 
 ---
 
@@ -669,6 +793,20 @@ avisar antes de começar a implementação se isso mudar.
   anterior foi salvo automaticamente com a duração correta. Vincular uma task Jira e
   confirmar que "Task criada" fica "Sim"; vincular só Movidesk e confirmar que continua
   "Não".
+- **Pausar/retomar**: pausar o cronômetro → relógio deve congelar e mostrar "Pausado" (no
+  card e no indicador da barra lateral); dar refresh com o cronômetro pausado → deve
+  continuar pausado e com o mesmo tempo congelado. Retomar → relógio volta a andar do
+  ponto certo (sem contar o tempo pausado). Parar ou trocar de categoria enquanto pausado
+  → conferir em `/entries` que a duração salva não inclui o intervalo pausado. Testar
+  múltiplos ciclos de pausa/retomada no mesmo registro. Depois, **editar** esse registro
+  (mesmo sem alterar nada, só abrir e salvar) e conferir que a duração continua a mesma —
+  é o caso que reintroduzia o tempo pausado antes da correção do `pausedSeconds`. Conferir
+  também que o modal de edição mostra o campo "Tempo pausado" já preenchido com o valor
+  certo (min/seg), que dá pra editar esse valor e a duração recalcula ao salvar, e que
+  "Zerar" remove a pausa (duração volta a ser todo o intervalo início–término).
+- **Story points padrão em 0**: adicionar uma task vinculada (no cronômetro ou no
+  lançamento manual) → o seletor de pontuação deve nascer em "0", não "1"; conferir que
+  ainda é possível escolher 1, 2, 3, 5, 8, 13 ou 21 normalmente.
 - **Lançamento manual + edição**: lançar uma entrada retroativa usando os seletores
   customizados de data/hora (conferir que a data mostra o ano), editar um registro
   completo (inclusive trocando a categoria de um registro com categoria excluída),
@@ -677,7 +815,13 @@ avisar antes de começar a implementação se isso mudar.
   dashboard (por categoria, por dia, por story points) para garantir que os números
   batem; testar os filtros hoje/7d/30d/custom; testar impressão (Ctrl/Cmd+P).
 - **Responsividade**: testar em viewport estreito (~375px) o formulário manual, o modal
-  de edição e a tela de categorias.
+  de edição e a tela de categorias. No modal de edição, conferir também que ele não
+  colapsa para uma largura estreita em telas médias/largas (`sm:max-w-4xl lg:max-w-5xl`)
+  e que a linha de cada task vinculada (categoria/link/pontos/lixeira) cabe numa linha só
+  com espaço razoável.
+- **Tema escuro em widgets nativos**: abrir um campo de comentário com texto suficiente
+  para rolar (cronômetro, lançamento manual ou edição) e conferir que a scrollbar aparece
+  fina e escura (não a barra branca padrão do sistema operacional).
 - **Deploy**: validar login e todas as funcionalidades acima no domínio de produção
   `pmtt.caliberda.com.br`, com as variáveis de ambiente configuradas na Vercel.
 
@@ -690,5 +834,9 @@ avisar antes de começar a implementação se isso mudar.
 - `src/hooks/use-auth.tsx`
 - `src/hooks/use-action-types.ts`
 - `src/hooks/use-active-timer.ts`
+- `src/hooks/use-time-entries.ts`
+- `src/components/entries/entry-form-fields.tsx`
+- `src/components/entries/edit-entry-dialog.tsx`
+- `src/app/globals.css`
 - `.env.example`
 - `src/app/(app)/dashboard/page.tsx`

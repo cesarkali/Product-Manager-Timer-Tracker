@@ -84,6 +84,11 @@
 }
 
 .dark {
+  /* Sem isso, o navegador continua desenhando widgets nativos (scrollbar,
+     controles de formulário não customizados) no tema claro do SO, mesmo com
+     toda a UI em CSS escura — é por isso que a barra de rolagem aparecia
+     branca apesar do `.scrollbar-thin`. */
+  color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -127,6 +132,29 @@
   html {
     @apply font-sans;
   }
+}
+
+/* Scrollbar fina e discreta (em vez da barra branca padrão do SO, que destoa
+   do tema escuro) — usada em áreas de rolagem internas da UI, como o textarea
+   de comentários. Cor derivada do token de tema (--muted-foreground), então
+   já funciona em claro e escuro sem regra extra. */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--muted-foreground) 40%, transparent) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklch, var(--muted-foreground) 40%, transparent);
+  border-radius: 9999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklch, var(--muted-foreground) 70%, transparent);
 }
 
 /* Relatório impresso/PDF do dashboard: força o tema claro (mesmo com .dark

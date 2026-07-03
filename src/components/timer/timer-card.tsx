@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Pause, Play } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,22 +15,37 @@ import type { ActiveTimerFields } from "@/hooks/use-active-timer";
 const NOTES_MAX_LENGTH = 1000;
 
 /** Atualiza o texto do relógio via requestAnimationFrame direto no DOM (sem
- * setState a cada frame) — puramente decorativo, não afeta o tempo persistido. */
-function useLiveClockText(startTimeMs: number | null) {
+ * setState a cada frame) — puramente decorativo, não afeta o tempo persistido.
+ * Congela (sem rAF) enquanto pausado, mostrando o tempo acumulado até a pausa. */
+function useLiveClockText(
+  startTimeMs: number | null,
+  pausedAtMs: number | null,
+  accumulatedPausedMs: number
+) {
   const ref = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     if (startTimeMs == null) return;
+    if (pausedAtMs != null) {
+      if (ref.current) {
+        ref.current.textContent = formatClockWithMillis(
+          Math.max(0, pausedAtMs - startTimeMs - accumulatedPausedMs)
+        );
+      }
+      return;
+    }
     let frameId: number;
     function tick() {
       if (ref.current) {
-        ref.current.textContent = formatClockWithMillis(Date.now() - startTimeMs!);
+        ref.current.textContent = formatClockWithMillis(
+          Math.max(0, Date.now() - startTimeMs! - accumulatedPausedMs)
+        );
       }
       frameId = requestAnimationFrame(tick);
     }
     frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);
-  }, [startTimeMs]);
+  }, [startTimeMs, pausedAtMs, accumulatedPausedMs]);
 
   return ref;
 }
@@ -38,18 +53,31 @@ function useLiveClockText(startTimeMs: number | null) {
 export function TimerCard({
   actionType,
   startTimeMs,
+  pausedAtMs,
+  accumulatedPausedSeconds,
   fields,
   onStop,
+  onPause,
+  onResume,
   onFieldsChange,
 }: {
   actionType: ActionType | null;
   startTimeMs: number | null;
+  pausedAtMs: number | null;
+  accumulatedPausedSeconds: number;
   fields: ActiveTimerFields;
   onStop: () => void;
+  onPause: () => void;
+  onResume: () => void;
   onFieldsChange: (patch: Partial<ActiveTimerFields>) => void;
 }) {
   const color = actionType ? categoryColor(actionType.colorTag) : undefined;
-  const clockRef = useLiveClockText(actionType ? startTimeMs : null);
+  const isPaused = pausedAtMs != null;
+  const clockRef = useLiveClockText(
+    actionType ? startTimeMs : null,
+    actionType ? pausedAtMs : null,
+    accumulatedPausedSeconds * 1000
+  );
 
   // Reseta os campos ao trocar de categoria ativa (padrão React de "ajustar
   // estado durante o render" em vez de useEffect, evita cascata de renders).
@@ -88,10 +116,16 @@ export function TimerCard({
             <div className="flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium">
               <CategoryIcon icon={actionType.icon} className="h-4 w-4 shrink-0" style={{ color }} />
               {actionType.name}
+              {isPaused && (
+                <span className="ml-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                  Pausado
+                </span>
+              )}
             </div>
             <p
               ref={clockRef}
-              className="font-mono text-6xl font-semibold tabular-nums tracking-tight sm:text-7xl"
+              className="font-mono text-6xl font-semibold tabular-nums tracking-tight sm:text-7xl data-[paused=true]:opacity-50"
+              data-paused={isPaused}
             >
               00:00:00.00
             </p>
@@ -100,7 +134,7 @@ export function TimerCard({
               <LinkedTasksEditor
                 items={tasksValue}
                 onAdd={() =>
-                  commitTasks([...tasksValue, { type: "jira", reference: "", storyPoints: 1 }])
+                  commitTasks([...tasksValue, { type: "jira", reference: "", storyPoints: 0 }])
                 }
                 onRemove={(index) => commitTasks(tasksValue.filter((_, i) => i !== index))}
                 onChangeItem={(index, patch) =>
@@ -127,9 +161,22 @@ export function TimerCard({
               </div>
             </div>
 
-            <Button variant="destructive" size="lg" onClick={onStop} className="min-w-40">
-              Parar
-            </Button>
+            <div className="flex gap-3">
+              {isPaused ? (
+                <Button variant="outline" size="lg" onClick={onResume} className="min-w-40 gap-2">
+                  <Play className="h-4 w-4" />
+                  Retomar
+                </Button>
+              ) : (
+                <Button variant="outline" size="lg" onClick={onPause} className="min-w-40 gap-2">
+                  <Pause className="h-4 w-4" />
+                  Pausar
+                </Button>
+              )}
+              <Button variant="destructive" size="lg" onClick={onStop} className="min-w-40">
+                Parar
+              </Button>
+            </div>
           </>
         ) : (
           <>

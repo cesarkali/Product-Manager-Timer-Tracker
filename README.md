@@ -18,6 +18,12 @@ justificar prioridades, carga de trabalho ou pedidos como um aumento.
   decorrido é calculado a partir do horário do servidor, então sobrevive a um refresh de
   página. Trocar de categoria com o cronômetro rodando salva automaticamente o registro
   anterior (operação atômica — nunca perde tempo registrado).
+- **Pausar/retomar o cronômetro**: para quando você precisa atender outra coisa sem
+  encerrar o registro em andamento. O relógio congela durante a pausa (indicador "Pausado"
+  visível no card e na barra lateral) e o tempo pausado é descontado do total ao retomar
+  ou ao finalizar o registro — nunca é contado como tempo trabalhado. Esse tempo pausado
+  fica visível e editável (ou zerável) no modal de edição do registro, caso precise
+  ajustar manualmente.
 - **Lançamento manual retroativo**: para registrar tempo gasto em algo que já aconteceu,
   sem precisar ter ligado o cronômetro. Data e horários usam seletores customizados
   (calendário e relógio próprios, ver abaixo), sempre exibindo dia/mês/**ano** por
@@ -38,7 +44,8 @@ justificar prioridades, carga de trabalho ou pedidos como um aumento.
 - **Tasks vinculadas com pontuação de complexidade**: cada registro de tempo pode ter uma
   ou mais tasks vinculadas (Jira e/ou Movidesk — botão "+" para adicionar quantas forem
   necessárias), cada uma com sua própria pontuação de complexidade (story points, escala
-  Fibonacci: 1, 2, 3, 5, 8, 13, 21). Isso ajuda a medir não só o tempo gasto, mas o
+  Fibonacci: 0, 1, 2, 3, 5, 8, 13, 21 — **0 é o valor padrão**, para tickets que não
+  precisam de pontuação). Isso ajuda a medir não só o tempo gasto, mas o
   esforço de análise/investigação por trás dele.
 - **"Task criada" automática e inteligente**: o registro é marcado como tendo gerado uma
   task formal automaticamente quando há ao menos uma task vinculada do tipo **Jira**

@@ -29,7 +29,7 @@ export function Sidebar() {
       )}
     >
       <div className={cn("flex h-16 shrink-0 items-center gap-2 border-b px-5", collapsed && "justify-center px-0")}>
-        <Image src="/icon.svg" alt="" width={26} height={26} className="shrink-0" />
+        <Image src="/icon.svg" alt="" width={26} height={26} className="shrink-0" priority />
         {!collapsed && (
           <div className="min-w-0">
             <span className="block truncate text-base font-semibold tracking-tight">PMTT</span>

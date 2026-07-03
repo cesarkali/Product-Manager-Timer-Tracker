@@ -23,7 +23,7 @@ export interface ActionType {
 
 export type TimeEntrySource = "timer" | "manual";
 
-export const STORY_POINT_OPTIONS = [1, 2, 3, 5, 8, 13, 21] as const;
+export const STORY_POINT_OPTIONS = [0, 1, 2, 3, 5, 8, 13, 21] as const;
 export type StoryPoints = (typeof STORY_POINT_OPTIONS)[number];
 
 export interface LinkedTask {
@@ -43,6 +43,11 @@ export interface TimeEntry {
   tasks: LinkedTask[];
   notes: string | null;
   source: TimeEntrySource;
+  /** Segundos pausados descontados entre `startTime` e `endTime`. Gravado
+   * automaticamente ao fechar um registro vindo do cronômetro pausado;
+   * editável (ou zerável) manualmente no modal de edição. Ausente/0 em
+   * registros manuais e em registros antigos sem pausa. */
+  pausedSeconds?: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -52,4 +57,10 @@ export interface ActiveTimer {
   startTime: Timestamp;
   tasks: LinkedTask[];
   comments: string | null;
+  /** Momento em que o cronômetro foi pausado; `null`/ausente = rodando.
+   * Ausente em docs criados antes da funcionalidade de pausa. */
+  pausedAt?: Timestamp | null;
+  /** Soma de todos os intervalos pausados até agora, em segundos — subtraída
+   * do tempo decorrido bruto. Ausente em docs antigos (equivale a 0). */
+  accumulatedPausedSeconds?: number;
 }

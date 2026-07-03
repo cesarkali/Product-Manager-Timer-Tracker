@@ -37,6 +37,9 @@ export const manualEntrySchema = z
     taskCreated: z.boolean(),
     tasks: z.array(linkedTaskSchema).max(20),
     notes: z.string().max(1000).optional(),
+    /** Segundos a descontar do intervalo início–término (tempo pausado do
+     * cronômetro). Editável no modal de edição; sempre 0 no lançamento manual. */
+    pausedSeconds: z.number().int().min(0).max(24 * 60 * 60).optional(),
   })
   .refine(
     (data) => `${data.date}T${data.startTime}` < `${data.date}T${data.endTime}`,
@@ -45,6 +48,18 @@ export const manualEntrySchema = z
   .refine((data) => data.date <= toLocalIsoDate(new Date()), {
     message: "Não é possível lançar um registro em data futura",
     path: ["date"],
-  });
+  })
+  .refine(
+    (data) => {
+      const spanMs =
+        new Date(`${data.date}T${data.endTime}`).getTime() -
+        new Date(`${data.date}T${data.startTime}`).getTime();
+      return (data.pausedSeconds ?? 0) * 1000 <= spanMs;
+    },
+    {
+      message: "Tempo pausado não pode ser maior que a duração do registro",
+      path: ["pausedSeconds"],
+    }
+  );
 
 export type ManualEntryInput = z.infer<typeof manualEntrySchema>;
