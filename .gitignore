@@ -49,3 +49,4 @@ firestore-debug.log
 AGENTS.md
 .agents/
 CLAUDE.md
+.claude/

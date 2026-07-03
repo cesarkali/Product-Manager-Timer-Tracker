@@ -16,16 +16,18 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { IconPicker } from "@/components/action-types/icon-picker";
+import { ColorPicker } from "@/components/action-types/color-picker";
 import { actionTypeSchema, type ActionTypeInput } from "@/lib/validation";
 import { ICON_KEYS } from "@/lib/icons";
 
 export function ActionTypeForm({
   onCreate,
 }: {
-  onCreate: (name: string, icon: string) => Promise<void>;
+  onCreate: (name: string, icon: string, colorTag?: string) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
   const [icon, setIcon] = useState(ICON_KEYS[0]);
+  const [colorTag, setColorTag] = useState("0");
   const {
     register,
     handleSubmit,
@@ -35,9 +37,10 @@ export function ActionTypeForm({
 
   async function onSubmit(data: ActionTypeInput) {
     try {
-      await onCreate(data.name, icon);
+      await onCreate(data.name, icon, colorTag);
       reset();
       setIcon(ICON_KEYS[0]);
+      setColorTag("0");
       setOpen(false);
     } catch {
       toast.error("Não foi possível criar a categoria.");
@@ -61,6 +64,10 @@ export function ActionTypeForm({
               {...register("name")}
             />
             {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label>Cor</Label>
+            <ColorPicker value={colorTag} onChange={setColorTag} />
           </div>
           <div className="flex flex-col gap-2">
             <Label>Ícone</Label>

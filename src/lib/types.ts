@@ -5,6 +5,8 @@ export interface UserProfile {
   name: string;
   role: "pm";
   createdAt: Timestamp;
+  hasSeededActionTypes?: boolean;
+  sidebarCollapsed?: boolean;
 }
 
 export interface ActionType {
@@ -13,10 +15,20 @@ export interface ActionType {
   colorTag: string;
   icon: string;
   archived: boolean;
+  order: number;
   createdAt: Timestamp;
 }
 
 export type TimeEntrySource = "timer" | "manual";
+
+export const STORY_POINT_OPTIONS = [1, 2, 3, 5, 8, 13, 21] as const;
+export type StoryPoints = (typeof STORY_POINT_OPTIONS)[number];
+
+export interface LinkedTask {
+  type: "jira" | "movidesk";
+  reference: string;
+  storyPoints: StoryPoints;
+}
 
 export interface TimeEntry {
   id: string;
@@ -26,8 +38,7 @@ export interface TimeEntry {
   endTime: Timestamp;
   durationSeconds: number;
   taskCreated: boolean;
-  movideskLink: string | null;
-  jiraLink: string | null;
+  tasks: LinkedTask[];
   notes: string | null;
   source: TimeEntrySource;
   createdAt: Timestamp;
@@ -37,7 +48,6 @@ export interface TimeEntry {
 export interface ActiveTimer {
   actionTypeId: string;
   startTime: Timestamp;
-  movideskLink: string | null;
-  jiraLink: string | null;
+  tasks: LinkedTask[];
   comments: string | null;
 }

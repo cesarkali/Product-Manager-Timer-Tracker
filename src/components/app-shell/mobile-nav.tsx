@@ -33,7 +33,7 @@ export function MobileNav() {
         />
         <SheetContent side="left" className="w-72">
           <SheetHeader>
-            <SheetTitle>Gestão de Tempo</SheetTitle>
+            <SheetTitle>PMTT</SheetTitle>
           </SheetHeader>
           <div className="flex flex-1 flex-col justify-between px-3 pb-4">
             <SidebarNavLinks onNavigate={() => setOpen(false)} />
@@ -54,7 +54,7 @@ export function MobileNav() {
           </div>
         </SheetContent>
       </Sheet>
-      <span className="text-sm font-semibold">Gestão de Tempo</span>
+      <span className="text-sm font-semibold">PMTT</span>
       <ActiveTimerIndicator compact />
     </header>
   );

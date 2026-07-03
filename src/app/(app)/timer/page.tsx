@@ -7,8 +7,7 @@ import { ActionTypeGrid } from "@/components/timer/action-type-grid";
 
 export default function TimerPage() {
   const { activeActionTypes, actionTypesById, loading: loadingTypes } = useActionTypes();
-  const { activeTimer, elapsedSeconds, startTimer, stopTimer, updateActiveTimerFields } =
-    useActiveTimer();
+  const { activeTimer, startTimer, stopTimer, updateActiveTimerFields } = useActiveTimer();
 
   const activeActionType = activeTimer ? actionTypesById.get(activeTimer.actionTypeId) ?? null : null;
 
@@ -16,10 +15,9 @@ export default function TimerPage() {
     <div className="flex flex-col gap-10">
       <TimerCard
         actionType={activeActionType}
-        elapsedSeconds={elapsedSeconds}
+        startTimeMs={activeTimer?.startTime ? activeTimer.startTime.toMillis() : null}
         fields={{
-          movideskLink: activeTimer?.movideskLink ?? null,
-          jiraLink: activeTimer?.jiraLink ?? null,
+          tasks: activeTimer?.tasks ?? [],
           comments: activeTimer?.comments ?? null,
         }}
         onStop={() => activeActionType && stopTimer(activeActionType.name)}

@@ -1,7 +1,15 @@
-export const DEFAULT_ACTION_TYPES: { name: string; icon: string }[] = [
-  { name: "Verificando incidentes no Movidesk", icon: "bug" },
-  { name: "Incidente retornado", icon: "rotate-ccw" },
-  { name: "Task criada", icon: "clipboard-check" },
-  { name: "Tirando dúvidas do suporte", icon: "headset" },
-  { name: "Tirando dúvidas da implantação", icon: "rocket" },
+export const DEFAULT_ACTION_TYPES: { name: string; icon: string; colorTag: string }[] = [
+  { name: "Criando task interna", icon: "clipboard-list", colorTag: "2" },
+  { name: "Desenvolvendo produtos", icon: "code", colorTag: "0" },
+  { name: "Incidente retornado", icon: "rotate-ccw", colorTag: "1" },
+  { name: "Melhoria retornada", icon: "rotate-cw", colorTag: "5" },
+  { name: "Testes exploratórios", icon: "flask-conical", colorTag: "1" },
+  { name: "Tirando dúvidas da Gestão", icon: "message-circle-question", colorTag: "4" },
+  { name: "Tirando dúvidas da implantação", icon: "rocket", colorTag: "4" },
+  { name: "Tirando dúvidas do CS", icon: "headset", colorTag: "5" },
+  { name: "Tirando dúvidas do DEV", icon: "code", colorTag: "2" },
+  { name: "Tirando dúvidas do Financeiro", icon: "dollar-sign", colorTag: "1" },
+  { name: "Tirando dúvidas do suporte", icon: "headset", colorTag: "1" },
+  { name: "Verificando incidentes no Movidesk", icon: "bug", colorTag: "0" },
+  { name: "Verificando melhorias no Movidesk", icon: "sparkles", colorTag: "5" },
 ];

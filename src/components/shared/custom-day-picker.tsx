@@ -8,10 +8,8 @@ import {
   endOfWeek,
   format,
   isAfter,
-  isBefore,
   isSameDay,
   isSameMonth,
-  isWithinInterval,
   startOfMonth,
   startOfWeek,
   subMonths,
@@ -23,59 +21,26 @@ import { cn } from "@/lib/utils";
 
 const WEEKDAY_LABELS = ["D", "S", "T", "Q", "Q", "S", "S"];
 
-export interface DateSpan {
-  start: Date;
-  end: Date;
-}
-
 /**
- * Calendário de seleção de intervalo construído do zero (sem lib de calendário pronta).
- * Primeiro clique marca o início, segundo clique marca o fim (ordem é normalizada).
+ * Grade de calendário de seleção de dia único, construída do zero (sem lib de
+ * calendário pronta) — mesmo estilo visual do CustomCalendar (intervalo) do dashboard.
  */
-export function CustomCalendar({
+export function CustomDayPicker({
   value,
   onChange,
   maxDate,
 }: {
-  value: DateSpan | null;
-  onChange: (span: DateSpan) => void;
+  value: Date | null;
+  onChange: (day: Date) => void;
   maxDate?: Date;
 }) {
-  const [visibleMonth, setVisibleMonth] = useState(() => value?.end ?? new Date());
-  const [pendingStart, setPendingStart] = useState<Date | null>(null);
-  const [hoverDate, setHoverDate] = useState<Date | null>(null);
+  const [visibleMonth, setVisibleMonth] = useState(() => value ?? new Date());
 
   const days = useMemo(() => {
     const gridStart = startOfWeek(startOfMonth(visibleMonth), { weekStartsOn: 0 });
     const gridEnd = endOfWeek(endOfMonth(visibleMonth), { weekStartsOn: 0 });
     return eachDayOfInterval({ start: gridStart, end: gridEnd });
   }, [visibleMonth]);
-
-  const previewEnd = pendingStart && hoverDate ? hoverDate : null;
-  const previewSpan =
-    pendingStart && previewEnd
-      ? {
-          start: isBefore(previewEnd, pendingStart) ? previewEnd : pendingStart,
-          end: isBefore(previewEnd, pendingStart) ? pendingStart : previewEnd,
-        }
-      : null;
-
-  function handleDayClick(day: Date) {
-    if (maxDate != null && isAfter(day, maxDate)) return;
-
-    if (!pendingStart) {
-      setPendingStart(day);
-      return;
-    }
-
-    const start = isBefore(day, pendingStart) ? day : pendingStart;
-    const end = isBefore(day, pendingStart) ? pendingStart : day;
-    onChange({ start, end });
-    setPendingStart(null);
-    setHoverDate(null);
-  }
-
-  const activeSpan = previewSpan ?? value;
 
   return (
     <div className="w-72 select-none rounded-lg border bg-card p-3 text-card-foreground">
@@ -117,29 +82,20 @@ export function CustomCalendar({
           const inCurrentMonth = isSameMonth(day, visibleMonth);
           const isFuture = maxDate != null && isAfter(day, maxDate);
           const isToday = isSameDay(day, new Date());
-          const isRangeEdge =
-            activeSpan && (isSameDay(day, activeSpan.start) || isSameDay(day, activeSpan.end));
-          const isInRange =
-            activeSpan &&
-            !isSameDay(activeSpan.start, activeSpan.end) &&
-            isWithinInterval(day, { start: activeSpan.start, end: activeSpan.end });
-          const isPendingStart = pendingStart && isSameDay(day, pendingStart);
+          const isSelected = value != null && isSameDay(day, value);
 
           return (
             <div key={day.toISOString()} className="flex items-center justify-center py-0.5">
               <button
                 type="button"
                 disabled={isFuture}
-                onClick={() => handleDayClick(day)}
-                onMouseEnter={() => setHoverDate(day)}
+                onClick={() => onChange(day)}
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-full text-sm transition-colors",
                   !inCurrentMonth && "text-muted-foreground/40",
-                  inCurrentMonth && !isRangeEdge && "text-foreground hover:bg-accent",
-                  isInRange && !isRangeEdge && "rounded-none bg-accent",
-                  isRangeEdge && "bg-primary font-medium text-primary-foreground",
-                  isPendingStart && !isRangeEdge && "bg-primary text-primary-foreground",
-                  isToday && !isRangeEdge && "ring-1 ring-inset ring-primary/50",
+                  inCurrentMonth && !isSelected && "text-foreground hover:bg-accent",
+                  isSelected && "bg-primary font-medium text-primary-foreground",
+                  isToday && !isSelected && "ring-1 ring-inset ring-primary/50",
                   isFuture && "cursor-not-allowed opacity-30"
                 )}
               >
@@ -149,10 +105,6 @@ export function CustomCalendar({
           );
         })}
       </div>
-
-      <p className="mt-2 text-center text-xs text-muted-foreground">
-        {pendingStart ? "Escolha a data final" : "Escolha a data inicial"}
-      </p>
     </div>
   );
 }

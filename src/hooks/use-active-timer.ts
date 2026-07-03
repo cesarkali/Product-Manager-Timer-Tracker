@@ -14,12 +14,11 @@ import {
 import { toast } from "sonner";
 import { db } from "@/lib/firebase/client";
 import { useAuth } from "@/hooks/use-auth";
-import type { ActiveTimer, ActionType } from "@/lib/types";
+import type { ActiveTimer, ActionType, LinkedTask } from "@/lib/types";
 import { formatDuration } from "@/lib/time/format";
 
 export interface ActiveTimerFields {
-  movideskLink: string | null;
-  jiraLink: string | null;
+  tasks: LinkedTask[];
   comments: string | null;
 }
 
@@ -64,15 +63,15 @@ export function useActiveTimer() {
         0,
         Math.round((endedAt.getTime() - startedAt.getTime()) / 1000)
       );
+      const previousTasks = activeTimer.tasks ?? [];
       batch.set(entryRef, {
         actionTypeId: activeTimer.actionTypeId,
         actionTypeName: previousActionType?.name ?? "Categoria",
         startTime: Timestamp.fromDate(startedAt),
         endTime: Timestamp.fromDate(endedAt),
         durationSeconds,
-        taskCreated: false,
-        movideskLink: activeTimer.movideskLink ?? null,
-        jiraLink: activeTimer.jiraLink ?? null,
+        taskCreated: previousTasks.some((task) => task.type === "jira"),
+        tasks: previousTasks,
         notes: activeTimer.comments ?? null,
         source: "timer",
         createdAt: serverTimestamp(),
@@ -84,8 +83,7 @@ export function useActiveTimer() {
     batch.set(activeTimerRef, {
       actionTypeId: nextActionType.id,
       startTime: serverTimestamp(),
-      movideskLink: null,
-      jiraLink: null,
+      tasks: [],
       comments: null,
     });
 
@@ -110,15 +108,15 @@ export function useActiveTimer() {
       Math.round((endedAt.getTime() - startedAt.getTime()) / 1000)
     );
 
+    const tasks = activeTimer.tasks ?? [];
     batch.set(entryRef, {
       actionTypeId: activeTimer.actionTypeId,
       actionTypeName,
       startTime: Timestamp.fromDate(startedAt),
       endTime: Timestamp.fromDate(endedAt),
       durationSeconds,
-      taskCreated: false,
-      movideskLink: activeTimer.movideskLink ?? null,
-      jiraLink: activeTimer.jiraLink ?? null,
+      taskCreated: tasks.some((task) => task.type === "jira"),
+      tasks,
       notes: activeTimer.comments ?? null,
       source: "timer",
       createdAt: serverTimestamp(),
@@ -132,9 +130,13 @@ export function useActiveTimer() {
 
   async function updateActiveTimerFields(patch: Partial<ActiveTimerFields>) {
     if (!user || !activeTimer) return;
-    const normalized: Record<string, string | null> = {};
-    for (const [key, value] of Object.entries(patch)) {
-      normalized[key] = value && value.trim() ? value.trim() : null;
+    const normalized: Record<string, string | null | LinkedTask[]> = {};
+    if ("tasks" in patch) {
+      normalized.tasks = patch.tasks ?? [];
+    }
+    if ("comments" in patch) {
+      const value = patch.comments;
+      normalized.comments = value && value.trim() ? value.trim().slice(0, 1000) : null;
     }
     await updateDoc(doc(db, "users", user.uid, "activeTimer", "current"), normalized);
   }

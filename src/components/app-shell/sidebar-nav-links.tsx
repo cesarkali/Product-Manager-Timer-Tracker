@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Clock, LayoutDashboard, ListChecks, Tags } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -12,27 +13,43 @@ const LINKS = [
   { href: "/settings/action-types", label: "Categorias", icon: Tags },
 ];
 
-export function SidebarNavLinks({ onNavigate }: { onNavigate?: () => void }) {
+export function SidebarNavLinks({
+  onNavigate,
+  collapsed = false,
+}: {
+  onNavigate?: () => void;
+  collapsed?: boolean;
+}) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col gap-1">
+    <nav className="flex flex-col gap-1.5">
       {LINKS.map((link) => {
         const Icon = link.icon;
         const isActive = pathname.startsWith(link.href);
-        return (
+        const linkEl = (
           <Link
             key={link.href}
             href={link.href}
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+              "flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+              collapsed && "justify-center px-0",
               isActive && "bg-accent font-medium text-foreground"
             )}
           >
-            <Icon className="h-4 w-4 shrink-0" />
-            {link.label}
+            <Icon className="h-5 w-5 shrink-0" />
+            {!collapsed && link.label}
           </Link>
+        );
+
+        if (!collapsed) return linkEl;
+
+        return (
+          <Tooltip key={link.href}>
+            <TooltipTrigger render={linkEl} />
+            <TooltipContent side="right">{link.label}</TooltipContent>
+          </Tooltip>
         );
       })}
     </nav>

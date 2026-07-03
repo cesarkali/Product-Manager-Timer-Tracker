@@ -1,16 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useActionTypes } from "@/hooks/use-action-types";
 import { useTimeEntries } from "@/hooks/use-time-entries";
+import { EditEntryDialog } from "@/components/entries/edit-entry-dialog";
+import type { TimeEntry } from "@/lib/types";
 import { customRange, rangeForPreset, type DateRange, type RangePreset } from "@/lib/time/ranges";
-import { formatDayLabel } from "@/lib/time/format";
+import { formatDayLabel, formatDateTimeLabel, toLocalIsoDate } from "@/lib/time/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DateRangeFilter } from "@/components/dashboard/date-range-filter";
 import { StatTiles } from "@/components/dashboard/stat-tiles";
 import { CategoryTotalsChart, type CategoryTotal } from "@/components/dashboard/category-totals-chart";
+import { CategoryPointsChart, type CategoryPoints } from "@/components/dashboard/category-points-chart";
 import { DailyTotalsChart, type DailyTotal } from "@/components/dashboard/daily-totals-chart";
 import {
   CategoryFrequencyTable,
@@ -24,7 +27,9 @@ function isRangePreset(value: string | null): value is RangePreset {
 
 function parseDateParam(value: string | null): Date | null {
   if (!value) return null;
-  const date = new Date(value);
+  const [y, m, d] = value.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  const date = new Date(y, m - 1, d);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
@@ -48,8 +53,9 @@ export function DashboardContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preset, customStartMs, customEndMs]);
 
-  const { actionTypesById } = useActionTypes();
-  const { entries, deleteEntry, updateEntry } = useTimeEntries(range);
+  const { actionTypes, actionTypesById } = useActionTypes();
+  const { entries, deleteEntry, updateEntry, updateEntryFull } = useTimeEntries(range);
+  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
 
   function setPreset(next: Exclude<RangePreset, "custom">) {
     const params = new URLSearchParams(searchParams);
@@ -62,14 +68,43 @@ export function DashboardContent() {
   function setCustomRange(span: DateRange) {
     const params = new URLSearchParams(searchParams);
     params.set("range", "custom");
-    params.set("start", span.start.toISOString().slice(0, 10));
-    params.set("end", span.end.toISOString().slice(0, 10));
+    params.set("start", toLocalIsoDate(span.start));
+    params.set("end", toLocalIsoDate(span.end));
     router.replace(`/dashboard?${params.toString()}`);
   }
 
   const totalSeconds = entries.reduce((sum, e) => sum + e.durationSeconds, 0);
   const taskCreatedPercent =
     entries.length === 0 ? 0 : Math.round((entries.filter((e) => e.taskCreated).length / entries.length) * 100);
+
+  const totalStoryPoints = entries.reduce(
+    (sum, e) => sum + (e.tasks ?? []).reduce((s, t) => s + t.storyPoints, 0),
+    0
+  );
+  const secondsPerPoint = totalStoryPoints === 0 ? null : Math.round(totalSeconds / totalStoryPoints);
+
+  const categoryPoints: CategoryPoints[] = useMemo(() => {
+    const totals = new Map<string, CategoryPoints>();
+    for (const entry of entries) {
+      const points = (entry.tasks ?? []).reduce((s, t) => s + t.storyPoints, 0);
+      if (points === 0) continue;
+      const actionType = actionTypesById.get(entry.actionTypeId);
+      const existing = totals.get(entry.actionTypeId);
+      if (existing) {
+        existing.totalPoints += points;
+        existing.count += 1;
+      } else {
+        totals.set(entry.actionTypeId, {
+          actionTypeId: entry.actionTypeId,
+          name: actionType?.name ?? `${entry.actionTypeName} (excluída)`,
+          colorTag: actionType?.colorTag,
+          totalPoints: points,
+          count: 1,
+        });
+      }
+    }
+    return Array.from(totals.values()).sort((a, b) => b.totalPoints - a.totalPoints);
+  }, [entries, actionTypesById]);
 
   const categoryTotals: CategoryTotal[] = useMemo(() => {
     const totals = new Map<string, CategoryTotal>();
@@ -97,7 +132,7 @@ export function DashboardContent() {
     for (const entry of entries) {
       const actionType = actionTypesById.get(entry.actionTypeId);
       const startDate = entry.startTime.toDate();
-      const dayKey = startDate.toISOString().slice(0, 10);
+      const dayKey = toLocalIsoDate(startDate);
       const key = `${dayKey}__${entry.actionTypeId}`;
       const existing = totals.get(key);
       if (existing) {
@@ -131,8 +166,19 @@ export function DashboardContent() {
       .reverse();
   }, [entries]);
 
+  const periodLabel =
+    preset === "today"
+      ? "Hoje"
+      : preset === "7d"
+        ? "Últimos 7 dias"
+        : preset === "30d"
+          ? "Últimos 30 dias"
+          : activeCustomRange
+            ? `${formatDayLabel(activeCustomRange.start)} a ${formatDayLabel(activeCustomRange.end)}`
+            : "Período customizado";
+
   return (
-    <div className="flex flex-col gap-8">
+    <div className="print-compact flex flex-col gap-8 print:gap-5">
       <div className="flex flex-wrap items-start justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
@@ -153,26 +199,40 @@ export function DashboardContent() {
         </div>
       </div>
 
+      <div className="hidden print:block">
+        <div className="flex items-baseline justify-between border-b pb-3">
+          <h1 className="text-xl font-semibold">Relatório de tempo — PMTT</h1>
+          <span className="text-sm text-muted-foreground">{periodLabel}</span>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Gerado em {formatDateTimeLabel(new Date())}
+        </p>
+      </div>
+
       <StatTiles
         totalSeconds={totalSeconds}
         entryCount={entries.length}
         taskCreatedPercent={taskCreatedPercent}
+        totalStoryPoints={totalStoryPoints}
+        secondsPerPoint={secondsPerPoint}
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 print:grid-cols-1 print:gap-4">
         <CategoryTotalsChart data={categoryTotals} />
         <DailyTotalsChart data={dailyTotals} />
+        <CategoryPointsChart data={categoryPoints} />
       </div>
 
-      <div className="flex flex-col gap-3">
-        <div>
+      <div className="flex flex-col gap-3 break-inside-avoid">
+        <div className="print:hidden">
           <h2 className="text-lg font-semibold">Frequência por dia</h2>
           <p className="text-sm text-muted-foreground">
             Quantas vezes cada categoria foi acionada no mesmo dia — útil pra ver rotinas
             que se repetem várias vezes num dia só.
           </p>
         </div>
-        <Card>
+        <h2 className="hidden text-base font-semibold print:block">Frequência por dia</h2>
+        <Card className="print:shadow-none">
           <CardContent>
             <CategoryFrequencyTable data={categoryDayFrequency} />
           </CardContent>
@@ -188,10 +248,18 @@ export function DashboardContent() {
               actionTypesById={actionTypesById}
               onDelete={deleteEntry}
               onToggleTaskCreated={(id, value) => updateEntry(id, { taskCreated: value })}
+              onEdit={setEditingEntry}
             />
           </CardContent>
         </Card>
       </div>
+
+      <EditEntryDialog
+        entry={editingEntry}
+        actionTypes={actionTypes}
+        onOpenChange={(open) => !open && setEditingEntry(null)}
+        onSave={updateEntryFull}
+      />
     </div>
   );
 }

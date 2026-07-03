@@ -43,10 +43,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let lastUpsertedUid: string | null = null;
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
-      if (firebaseUser) {
+      // Só grava o perfil quando o uid muda (login real), não a cada
+      // reavaliação do listener — evita brigar por escrita com o seed
+      // de categorias, que também lê/escreve users/{uid}.
+      if (firebaseUser && lastUpsertedUid !== firebaseUser.uid) {
+        lastUpsertedUid = firebaseUser.uid;
         await upsertUserProfile(firebaseUser);
       }
     });

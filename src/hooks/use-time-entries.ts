@@ -17,7 +17,7 @@ import {
 import { db } from "@/lib/firebase/client";
 import { useAuth } from "@/hooks/use-auth";
 import type { DateRange } from "@/lib/time/ranges";
-import type { TimeEntry } from "@/lib/types";
+import type { LinkedTask, TimeEntry } from "@/lib/types";
 
 export interface ManualEntryData {
   actionTypeId: string;
@@ -25,8 +25,7 @@ export interface ManualEntryData {
   startTime: Date;
   endTime: Date;
   taskCreated: boolean;
-  movideskLink: string | null;
-  jiraLink: string | null;
+  tasks: LinkedTask[];
   notes: string | null;
 }
 
@@ -66,9 +65,8 @@ export function useTimeEntries(range: DateRange) {
       startTime: Timestamp.fromDate(data.startTime),
       endTime: Timestamp.fromDate(data.endTime),
       durationSeconds,
-      taskCreated: data.taskCreated,
-      movideskLink: data.movideskLink,
-      jiraLink: data.jiraLink,
+      taskCreated: data.taskCreated || data.tasks.some((task) => task.type === "jira"),
+      tasks: data.tasks,
       notes: data.notes,
       source: "manual",
       createdAt: serverTimestamp(),
@@ -78,11 +76,30 @@ export function useTimeEntries(range: DateRange) {
 
   async function updateEntry(
     id: string,
-    patch: Partial<Pick<TimeEntry, "taskCreated" | "movideskLink" | "jiraLink" | "notes">>
+    patch: Partial<Pick<TimeEntry, "taskCreated" | "tasks" | "notes">>
   ) {
     if (!user) return;
     await updateDoc(doc(db, "users", user.uid, "timeEntries", id), {
       ...patch,
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  async function updateEntryFull(id: string, data: ManualEntryData) {
+    if (!user) return;
+    const durationSeconds = Math.max(
+      0,
+      Math.round((data.endTime.getTime() - data.startTime.getTime()) / 1000)
+    );
+    await updateDoc(doc(db, "users", user.uid, "timeEntries", id), {
+      actionTypeId: data.actionTypeId,
+      actionTypeName: data.actionTypeName,
+      startTime: Timestamp.fromDate(data.startTime),
+      endTime: Timestamp.fromDate(data.endTime),
+      durationSeconds,
+      taskCreated: data.taskCreated || data.tasks.some((task) => task.type === "jira"),
+      tasks: data.tasks,
+      notes: data.notes,
       updatedAt: serverTimestamp(),
     });
   }
@@ -92,5 +109,5 @@ export function useTimeEntries(range: DateRange) {
     await deleteDoc(doc(db, "users", user.uid, "timeEntries", id));
   }
 
-  return { entries, loading, addManualEntry, updateEntry, deleteEntry };
+  return { entries, loading, addManualEntry, updateEntry, updateEntryFull, deleteEntry };
 }

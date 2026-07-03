@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gestão de Tempo",
+  title: "PMTT — Product Manager Time Tracker",
   description: "Registro de tempo e evidência de trabalho para PMs",
 };
 

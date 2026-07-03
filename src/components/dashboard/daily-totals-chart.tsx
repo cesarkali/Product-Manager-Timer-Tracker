@@ -11,9 +11,9 @@ export interface DailyTotal {
 
 export function DailyTotalsChart({ data }: { data: DailyTotal[] }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Tempo por dia</CardTitle>
+    <Card className="break-inside-avoid print:shadow-none">
+      <CardHeader className="print:pb-2">
+        <CardTitle className="print:text-base">Tempo por dia</CardTitle>
       </CardHeader>
       <CardContent>
         <div style={{ width: "100%", height: 220 }}>
@@ -28,7 +28,13 @@ export function DailyTotalsChart({ data }: { data: DailyTotal[] }) {
               />
               <Tooltip
                 formatter={(value) => formatDuration(Number(value ?? 0))}
-                contentStyle={{ background: "var(--card)", border: "1px solid var(--border)" }}
+                contentStyle={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  color: "var(--card-foreground)",
+                }}
+                labelStyle={{ color: "var(--card-foreground)" }}
+                itemStyle={{ color: "var(--card-foreground)" }}
               />
               <Bar dataKey="totalSeconds" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
             </BarChart>

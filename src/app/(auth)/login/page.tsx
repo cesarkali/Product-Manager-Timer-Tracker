@@ -26,9 +26,9 @@ export default function LoginPage() {
       />
       <div className="relative flex flex-col items-center gap-8">
         <div className="text-center">
-          <h1 className="text-xl font-semibold tracking-tight">Gestão de Tempo</h1>
+          <h1 className="text-xl font-semibold tracking-tight">PMTT</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Registro de tempo e evidência de trabalho
+            Product Manager Time Tracker — registro de tempo e evidência de trabalho
           </p>
         </div>
         <LoginForm />

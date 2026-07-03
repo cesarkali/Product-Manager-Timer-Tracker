@@ -3,22 +3,21 @@
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { categoryColor } from "@/lib/palette";
-import { formatDuration } from "@/lib/time/format";
 
-export interface CategoryTotal {
+export interface CategoryPoints {
   actionTypeId: string;
   name: string;
   colorTag: string | undefined;
-  totalSeconds: number;
+  totalPoints: number;
   count: number;
 }
 
-export function CategoryTotalsChart({ data }: { data: CategoryTotal[] }) {
+export function CategoryPointsChart({ data }: { data: CategoryPoints[] }) {
   if (data.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Tempo por categoria</CardTitle>
+          <CardTitle>Pontos de complexidade por categoria</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">Sem dados no período.</p>
@@ -32,19 +31,14 @@ export function CategoryTotalsChart({ data }: { data: CategoryTotal[] }) {
   return (
     <Card className="break-inside-avoid print:shadow-none">
       <CardHeader className="print:pb-2">
-        <CardTitle className="print:text-base">Tempo por categoria</CardTitle>
+        <CardTitle className="print:text-base">Pontos de complexidade por categoria</CardTitle>
       </CardHeader>
       <CardContent>
         <div style={{ width: "100%", height: chartHeight }}>
           <ResponsiveContainer>
             <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24 }}>
               <CartesianGrid horizontal={false} strokeOpacity={0.15} />
-              <XAxis
-                type="number"
-                tickFormatter={(v) => formatDuration(v)}
-                stroke="currentColor"
-                strokeOpacity={0.4}
-              />
+              <XAxis type="number" stroke="currentColor" strokeOpacity={0.4} allowDecimals={false} />
               <YAxis
                 type="category"
                 dataKey="name"
@@ -55,9 +49,8 @@ export function CategoryTotalsChart({ data }: { data: CategoryTotal[] }) {
               />
               <Tooltip
                 formatter={(value, _name, item) => {
-                  const count = (item?.payload as CategoryTotal | undefined)?.count;
-                  const durationLabel = formatDuration(Number(value ?? 0));
-                  return count != null ? `${durationLabel} · ${count}x` : durationLabel;
+                  const count = (item?.payload as CategoryPoints | undefined)?.count;
+                  return count != null ? `${value ?? 0} pontos · ${count}x` : `${value ?? 0} pontos`;
                 }}
                 contentStyle={{
                   background: "var(--card)",
@@ -67,7 +60,7 @@ export function CategoryTotalsChart({ data }: { data: CategoryTotal[] }) {
                 labelStyle={{ color: "var(--card-foreground)" }}
                 itemStyle={{ color: "var(--card-foreground)" }}
               />
-              <Bar dataKey="totalSeconds" radius={[0, 4, 4, 0]}>
+              <Bar dataKey="totalPoints" radius={[0, 4, 4, 0]}>
                 {data.map((entry) => (
                   <Cell key={entry.actionTypeId} fill={categoryColor(entry.colorTag)} />
                 ))}
