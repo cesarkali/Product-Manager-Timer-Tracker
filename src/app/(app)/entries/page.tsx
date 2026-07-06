@@ -11,10 +11,16 @@ import { DateRangeFilter } from "@/components/dashboard/date-range-filter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TimeEntry } from "@/lib/types";
 
+const ENTRIES_PRESETS: { value: Exclude<RangePreset, "custom">; label: string }[] = [
+  { value: "today", label: "Hoje" },
+  { value: "7d", label: "7 dias" },
+  { value: "month", label: "Este mês" },
+];
+
 export default function EntriesPage() {
-  const [preset, setPreset] = useState<Exclude<RangePreset, "custom">>("30d");
+  const [preset, setPreset] = useState<Exclude<RangePreset, "custom">>("today");
   const [selectedCustomRange, setSelectedCustomRange] = useState<DateRange | null>(null);
-  const [activePreset, setActivePreset] = useState<RangePreset>("30d");
+  const [activePreset, setActivePreset] = useState<RangePreset>("today");
 
   const range = useMemo(() => {
     if (activePreset === "custom" && selectedCustomRange) return selectedCustomRange;
@@ -37,6 +43,7 @@ export default function EntriesPage() {
         <DateRangeFilter
           preset={activePreset}
           customRange={selectedCustomRange}
+          presets={ENTRIES_PRESETS}
           onChange={(next) => {
             setPreset(next);
             setActivePreset(next);

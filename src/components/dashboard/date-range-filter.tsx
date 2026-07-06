@@ -9,7 +9,7 @@ import { formatDayLabel } from "@/lib/time/format";
 import { cn } from "@/lib/utils";
 import type { DateRange, RangePreset } from "@/lib/time/ranges";
 
-const PRESETS: { value: Exclude<RangePreset, "custom">; label: string }[] = [
+const DEFAULT_PRESETS: { value: Exclude<RangePreset, "custom">; label: string }[] = [
   { value: "today", label: "Hoje" },
   { value: "7d", label: "7 dias" },
   { value: "30d", label: "30 dias" },
@@ -20,17 +20,19 @@ export function DateRangeFilter({
   customRange,
   onChange,
   onCustomRangeChange,
+  presets = DEFAULT_PRESETS,
 }: {
   preset: RangePreset;
   customRange: DateRange | null;
   onChange: (preset: Exclude<RangePreset, "custom">) => void;
   onCustomRangeChange: (range: DateRange) => void;
+  presets?: { value: Exclude<RangePreset, "custom">; label: string }[];
 }) {
   const [open, setOpen] = useState(false);
 
   return (
     <div className="flex flex-wrap gap-1">
-      {PRESETS.map((p) => (
+      {presets.map((p) => (
         <Button
           key={p.value}
           size="sm"

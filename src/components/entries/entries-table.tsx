@@ -37,22 +37,45 @@ export function EntriesTable({
   onEdit: (entry: TimeEntry) => void;
 }) {
   if (entries.length === 0) {
-    return <p className="text-sm text-muted-foreground">Nenhum registro no período selecionado.</p>;
+    return (
+      <p className="py-8 text-center text-sm text-muted-foreground">
+        Nenhum registro no período selecionado.
+      </p>
+    );
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-lg border">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Categoria</TableHead>
-            <TableHead>Início</TableHead>
-            <TableHead>Duração</TableHead>
-            <TableHead>Origem</TableHead>
-            <TableHead>Tasks</TableHead>
-            <TableHead className="w-full">Comentário</TableHead>
-            <TableHead>Task criada</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Categoria
+            </TableHead>
+            <TableHead className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Início
+            </TableHead>
+            <TableHead className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Fim
+            </TableHead>
+            <TableHead className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Duração
+            </TableHead>
+            <TableHead className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Origem
+            </TableHead>
+            <TableHead className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Tasks
+            </TableHead>
+            <TableHead className="w-full text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Comentário
+            </TableHead>
+            <TableHead className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Task criada
+            </TableHead>
+            <TableHead className="text-right text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Ações
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -62,21 +85,34 @@ export function EntriesTable({
             const tasks = entry.tasks ?? [];
             return (
               <TableRow key={entry.id}>
-                <TableCell>
+                <TableCell className="py-3">
                   <div className="flex items-center gap-2">
                     <span
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
                       style={{ backgroundColor: `color-mix(in oklch, ${color} 18%, transparent)` }}
                     >
                       <CategoryIcon icon={actionType?.icon} className="h-3.5 w-3.5" style={{ color }} />
                     </span>
-                    {actionType ? actionType.name : `${entry.actionTypeName} (excluída)`}
+                    <span className="font-medium">
+                      {actionType ? actionType.name : `${entry.actionTypeName} (excluída)`}
+                    </span>
                   </div>
                 </TableCell>
-                <TableCell>{formatDateTimeLabel(entry.startTime.toDate())}</TableCell>
-                <TableCell>{formatDuration(entry.durationSeconds)}</TableCell>
-                <TableCell className="capitalize">
-                  {entry.source === "timer" ? "Cronômetro" : "Manual"}
+                <TableCell className="text-muted-foreground">
+                  {formatDateTimeLabel(entry.startTime.toDate())}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {formatDateTimeLabel(entry.endTime.toDate())}
+                </TableCell>
+                <TableCell>
+                  <span className="font-mono text-xs font-medium tabular-nums">
+                    {formatDuration(entry.durationSeconds)}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={entry.source === "timer" ? "default" : "outline"}>
+                    {entry.source === "timer" ? "Cronômetro" : "Manual"}
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   {tasks.length > 0 ? (
@@ -140,12 +176,14 @@ export function EntriesTable({
                   </button>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button size="sm" variant="ghost" onClick={() => onEdit(entry)} aria-label="Editar">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => onDelete(entry.id)}>
-                    Excluir
-                  </Button>
+                  <div className="flex justify-end gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => onEdit(entry)} aria-label="Editar">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => onDelete(entry.id)}>
+                      Excluir
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             );

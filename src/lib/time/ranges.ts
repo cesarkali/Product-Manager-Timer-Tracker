@@ -1,4 +1,4 @@
-export type RangePreset = "today" | "7d" | "30d" | "custom";
+export type RangePreset = "today" | "7d" | "30d" | "month" | "custom";
 
 export interface DateRange {
   start: Date;
@@ -21,6 +21,11 @@ export function rangeForPreset(preset: Exclude<RangePreset, "custom">, now = new
   const end = endOfDay(now);
   if (preset === "today") {
     return { start: startOfDay(now), end };
+  }
+  if (preset === "month") {
+    const start = startOfDay(now);
+    start.setDate(1);
+    return { start, end };
   }
   const days = preset === "7d" ? 6 : 29;
   const start = startOfDay(now);
