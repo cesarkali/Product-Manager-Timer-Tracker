@@ -149,7 +149,7 @@ export function EntriesTable({
                           <button
                             type="button"
                             onClick={() => onEdit(entry)}
-                            className="block max-w-[min(480px,40vw)] truncate text-left hover:underline"
+                            className="block max-w-48 truncate text-left hover:underline"
                           />
                         }
                       >
