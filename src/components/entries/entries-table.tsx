@@ -68,7 +68,7 @@ export function EntriesTable({
               Tasks
             </TableHead>
             <TableHead className="w-full text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-              Comentário
+              Descrição
             </TableHead>
             <TableHead className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
               Task criada
@@ -142,28 +142,42 @@ export function EntriesTable({
                   )}
                 </TableCell>
                 <TableCell>
-                  {entry.notes ? (
-                    <Tooltip>
-                      <TooltipTrigger
-                        render={
-                          <button
-                            type="button"
-                            onClick={() => onEdit(entry)}
-                            className="block max-w-48 truncate text-left hover:underline"
-                          />
-                        }
-                      >
-                        {entry.notes}
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-64 flex-col items-start whitespace-pre-wrap">
-                        {truncateForTooltip(entry.notes)}
-                        {entry.notes.length > TOOLTIP_NOTES_LIMIT && (
-                          <span className="mt-1 block text-[10px] font-normal text-background/70">
-                            Clique para ver o comentário completo.
-                          </span>
-                        )}
-                      </TooltipContent>
-                    </Tooltip>
+                  {entry.description || entry.notes ? (
+                    <div className="flex max-w-64 flex-col gap-0.5">
+                      {entry.description && (
+                        <button
+                          type="button"
+                          onClick={() => onEdit(entry)}
+                          className="block truncate text-left font-medium hover:underline"
+                          title={entry.description}
+                        >
+                          {entry.description}
+                        </button>
+                      )}
+                      {entry.notes && (
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <button
+                                type="button"
+                                onClick={() => onEdit(entry)}
+                                className="block max-w-48 truncate text-left text-xs text-muted-foreground hover:underline"
+                              />
+                            }
+                          >
+                            {entry.notes}
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-64 flex-col items-start whitespace-pre-wrap">
+                            {truncateForTooltip(entry.notes)}
+                            {entry.notes.length > TOOLTIP_NOTES_LIMIT && (
+                              <span className="mt-1 block text-[10px] font-normal text-background/70">
+                                Clique para ver o comentário completo.
+                              </span>
+                            )}
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}

@@ -6,23 +6,63 @@ import { useActionTypes } from "@/hooks/use-action-types";
 import { useTimeEntries } from "@/hooks/use-time-entries";
 import { EditEntryDialog } from "@/components/entries/edit-entry-dialog";
 import type { TimeEntry } from "@/lib/types";
-import { customRange, rangeForPreset, type DateRange, type RangePreset } from "@/lib/time/ranges";
+import {
+  customRange,
+  previousRange,
+  rangeForPreset,
+  type DateRange,
+  type RangePreset,
+} from "@/lib/time/ranges";
 import { formatDayLabel, formatDateTimeLabel, toLocalIsoDate } from "@/lib/time/format";
+import { NO_AREA_LABEL } from "@/lib/areas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DateRangeFilter } from "@/components/dashboard/date-range-filter";
-import { StatTiles } from "@/components/dashboard/stat-tiles";
+import { StatTiles, type StatTilesPrevious } from "@/components/dashboard/stat-tiles";
 import { CategoryTotalsChart, type CategoryTotal } from "@/components/dashboard/category-totals-chart";
 import { CategoryPointsChart, type CategoryPoints } from "@/components/dashboard/category-points-chart";
 import { DailyTotalsChart, type DailyTotal } from "@/components/dashboard/daily-totals-chart";
+import { AreaTotalsChart, type AreaTotal } from "@/components/dashboard/area-totals-chart";
+import { TaskTimeTable, type TaskAggregate } from "@/components/dashboard/task-time-table";
+import { WeekHourHeatmap } from "@/components/dashboard/week-hour-heatmap";
+import { ExecutiveSummary } from "@/components/dashboard/executive-summary";
 import {
   CategoryFrequencyTable,
   type CategoryDayFrequency,
 } from "@/components/dashboard/category-frequency-table";
 import { EntriesTable } from "@/components/entries/entries-table";
 
+// "30d" segue aceito na URL por back-compat com links salvos, mesmo sem botão.
 function isRangePreset(value: string | null): value is RangePreset {
-  return value === "today" || value === "7d" || value === "30d" || value === "custom";
+  return (
+    value === "today" ||
+    value === "7d" ||
+    value === "30d" ||
+    value === "month" ||
+    value === "lastMonth" ||
+    value === "custom"
+  );
+}
+
+function kpisOf(entries: TimeEntry[]) {
+  const totalSeconds = entries.reduce((sum, e) => sum + e.durationSeconds, 0);
+  const taskCreatedPercent =
+    entries.length === 0
+      ? 0
+      : Math.round((entries.filter((e) => e.taskCreated).length / entries.length) * 100);
+  const totalStoryPoints = entries.reduce(
+    (sum, e) => sum + (e.tasks ?? []).reduce((s, t) => s + t.storyPoints, 0),
+    0
+  );
+  const secondsPerPoint =
+    totalStoryPoints === 0 ? null : Math.round(totalSeconds / totalStoryPoints);
+  return {
+    totalSeconds,
+    entryCount: entries.length,
+    taskCreatedPercent,
+    totalStoryPoints,
+    secondsPerPoint,
+  };
 }
 
 function parseDateParam(value: string | null): Date | null {

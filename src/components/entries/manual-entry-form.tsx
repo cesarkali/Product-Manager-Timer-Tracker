@@ -17,9 +17,14 @@ function todayIso() {
 export function ManualEntryForm({
   actionTypes,
   onCreate,
+  defaultValues,
+  onSuccess,
 }: {
   actionTypes: ActionType[];
   onCreate: (data: ManualEntryData) => Promise<void>;
+  /** Pré-preenchimento (ex.: lacuna clicada na timeline do dia). */
+  defaultValues?: Partial<ManualEntryInput>;
+  onSuccess?: () => void;
 }) {
   const {
     handleSubmit,
@@ -37,8 +42,10 @@ export function ManualEntryForm({
       actionTypeId: "",
       startTime: "",
       endTime: "",
+      description: "",
       notes: "",
       pausedSeconds: 0,
+      ...defaultValues,
     },
   });
 
@@ -53,6 +60,7 @@ export function ManualEntryForm({
         endTime: new Date(`${data.date}T${data.endTime}`),
         taskCreated: data.taskCreated,
         tasks: data.tasks,
+        description: data.description || null,
         notes: data.notes || null,
         pausedSeconds: data.pausedSeconds ?? 0,
       });
@@ -62,10 +70,13 @@ export function ManualEntryForm({
         actionTypeId: "",
         startTime: "",
         endTime: "",
+        description: "",
+        notes: "",
         tasks: [],
         pausedSeconds: 0,
       });
       toast.success("Registro adicionado.");
+      onSuccess?.();
     } catch {
       toast.error("Não foi possível salvar o registro.");
     }

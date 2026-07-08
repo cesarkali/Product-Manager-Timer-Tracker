@@ -58,6 +58,7 @@ export function EditEntryDialog({
           endTime: toTimeString(endDate!),
           taskCreated: entry.taskCreated,
           tasks: entry.tasks ?? [],
+          description: entry.description ?? "",
           notes: entry.notes ?? "",
           pausedSeconds: entry.pausedSeconds ?? 0,
         }
@@ -76,6 +77,7 @@ export function EditEntryDialog({
         endTime: new Date(`${data.date}T${data.endTime}`),
         taskCreated: data.taskCreated,
         tasks: data.tasks,
+        description: data.description || null,
         notes: data.notes || null,
         pausedSeconds: data.pausedSeconds ?? 0,
       });

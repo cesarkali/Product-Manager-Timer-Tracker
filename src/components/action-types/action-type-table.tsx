@@ -18,13 +18,23 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { IconPicker } from "@/components/action-types/icon-picker";
 import { ColorPicker } from "@/components/action-types/color-picker";
 import { ShortcutPicker } from "@/components/action-types/shortcut-picker";
 import { CategoryIcon } from "@/lib/icons";
 import { categoryColor } from "@/lib/palette";
+import { AREA_OPTIONS, NO_AREA_LABEL } from "@/lib/areas";
 import { cn } from "@/lib/utils";
 import type { ActionType } from "@/lib/types";
+
+const NO_AREA_VALUE = "__none__";
 
 export function ActionTypeTable({
   actionTypes,
@@ -32,6 +42,7 @@ export function ActionTypeTable({
   onIconChange,
   onColorChange,
   onShortcutChange,
+  onAreaChange,
   onArchiveToggle,
   onReorder,
   onDelete,
@@ -41,6 +52,7 @@ export function ActionTypeTable({
   onIconChange: (id: string, icon: string) => Promise<void>;
   onColorChange: (id: string, colorTag: string) => Promise<void>;
   onShortcutChange: (id: string, shortcutKey: number | null) => Promise<void>;
+  onAreaChange: (id: string, area: string | null) => Promise<void>;
   onArchiveToggle: (id: string, archived: boolean) => Promise<void>;
   onReorder: (orderedIds: string[]) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -77,6 +89,7 @@ export function ActionTypeTable({
           <TableHead className="w-10" />
           <TableHead>Cor</TableHead>
           <TableHead className="w-full">Categoria</TableHead>
+          <TableHead>Área</TableHead>
           <TableHead>Atalho</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="text-right">Ações</TableHead>
@@ -181,6 +194,30 @@ export function ActionTypeTable({
                     </button>
                   )}
                 </div>
+              </TableCell>
+              <TableCell>
+                <Select
+                  value={actionType.area ?? NO_AREA_VALUE}
+                  onValueChange={(value) =>
+                    onAreaChange(actionType.id, value === NO_AREA_VALUE ? null : (value as string))
+                  }
+                >
+                  <SelectTrigger className="h-8 w-36" aria-label="Área da categoria">
+                    <SelectValue>
+                      {(value: string | null) =>
+                        value && value !== NO_AREA_VALUE ? value : NO_AREA_LABEL
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_AREA_VALUE}>{NO_AREA_LABEL}</SelectItem>
+                    {AREA_OPTIONS.map((area) => (
+                      <SelectItem key={area} value={area}>
+                        {area}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </TableCell>
               <TableCell>
                 <ShortcutPicker

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { STORY_POINT_OPTIONS } from "@/lib/types";
+import { DESCRIPTION_MAX_LENGTH, STORY_POINT_OPTIONS } from "@/lib/types";
 import { toLocalIsoDate } from "@/lib/time/format";
 
 export const loginSchema = z.object({
@@ -36,6 +36,10 @@ export const manualEntrySchema = z
     endTime: z.string().min(1, "Informe o horário de término"),
     taskCreated: z.boolean(),
     tasks: z.array(linkedTaskSchema).max(20),
+    description: z
+      .string()
+      .max(DESCRIPTION_MAX_LENGTH, `Máximo de ${DESCRIPTION_MAX_LENGTH} caracteres`)
+      .optional(),
     notes: z.string().max(1000).optional(),
     /** Segundos a descontar do intervalo início–término (tempo pausado do
      * cronômetro). Editável no modal de edição; sempre 0 no lançamento manual. */

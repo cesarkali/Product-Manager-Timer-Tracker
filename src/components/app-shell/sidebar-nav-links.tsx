@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clock, LayoutDashboard, ListChecks, Tags } from "lucide-react";
+import { LayoutDashboard, ListChecks, Settings, Sun } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
-  { href: "/timer", label: "Cronômetro", icon: Clock },
+  { href: "/timer", label: "Hoje", icon: Sun },
   { href: "/entries", label: "Registros", icon: ListChecks },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/settings/action-types", label: "Categorias", icon: Tags },
+  // startsWith("/settings") também marca ativa a rota antiga redirecionada.
+  { href: "/settings", label: "Configurações", icon: Settings },
 ];
 
 export function SidebarNavLinks({
