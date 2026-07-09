@@ -13,11 +13,27 @@ justificar prioridades, carga de trabalho ou pedidos como um aumento.
 
 ## O que o sistema faz
 
+- **Página do dia ("Hoje")**: a tela do cronômetro é a home prática do dia — resumo de
+  hoje (tempo total + nº de registros), **linha do dia** com blocos coloridos por
+  categoria e **lacunas clicáveis** (clicou numa lacuna sem registro → abre o lançamento
+  manual já pré-preenchido com os horários certos), além do grid de categorias.
+- **Descrição rápida ("O que você está fazendo?")**: campo curto e proeminente no
+  cronômetro (até 140 caracteres, separado dos comentários longos), com **chips das
+  descrições recentes da mesma categoria** — 1 clique preenche e salva. A descrição vira
+  a linha principal na tabela de registros e também existe no lançamento manual/edição.
 - **Cronômetro em tempo real**: inicia/para um timer vinculado a uma categoria de
   atividade, com indicador visível em toda a aplicação enquanto está rodando. O tempo
   decorrido é calculado a partir do horário do servidor, então sobrevive a um refresh de
   página. Trocar de categoria com o cronômetro rodando salva automaticamente o registro
-  anterior (operação atômica — nunca perde tempo registrado).
+  anterior (operação atômica — nunca perde tempo registrado). Atalhos de teclado 1-9
+  iniciam a categoria configurada direto.
+- **Ajuste retroativo do início**: esqueceu de ligar o cronômetro na hora? "Iniciado às
+  HH:mm:ss · ajustar" corrige o início do timer em andamento (chips −5/−10/−15/−30 min
+  ou horário exato), sem nunca aceitar horário no futuro.
+- **Lembrete "cadê o cronômetro?"**: dentro do expediente configurado (Configurações →
+  Preferências), se nenhum timer estiver rodando pelo tempo escolhido, o app avisa com
+  um toast e — se você permitir — uma notificação do navegador (funciona com a aba em
+  segundo plano; aba fechada não notifica).
 - **Pausar/retomar o cronômetro**: para quando você precisa atender outra coisa sem
   encerrar o registro em andamento. O relógio congela durante a pausa (indicador "Pausado"
   visível no card e na barra lateral) e o tempo pausado é descontado do total ao retomar
@@ -32,6 +48,10 @@ justificar prioridades, carga de trabalho ou pedidos como um aumento.
   - CRUD completo (criar, renomear, arquivar/reativar, excluir).
   - **Ícone** e **cor** escolhidos livremente por categoria (paleta fixa de 8 cores,
     testada para daltonismo).
+  - **Área de negócio** opcional por categoria (Suporte, Desenvolvimento, CS, Gestão,
+    Financeiro, Implantação, Produto, Outro) — agrupa o tempo por área atendida no
+    dashboard: "X% do meu tempo vai para destravar o suporte".
+  - **Atalho de teclado** (1-9) opcional por categoria para iniciar direto no cronômetro.
   - **Ordem de exibição** no grid do cronômetro é definida por você — arraste as linhas
     pela alça na tela de Categorias para reordenar (drag-and-drop nativo, sem lib
     externa).
@@ -58,17 +78,24 @@ justificar prioridades, carga de trabalho ou pedidos como um aumento.
   ser editado depois — categoria, data, horários, tasks vinculadas e comentário —, útil
   para corrigir um lançamento feito errado. Mesmo um registro cuja categoria já foi
   excluída pode ser reatribuído a uma categoria válida.
-- **Dashboard com evidências**: totais por categoria, totais por dia, total de story
-  points, pontos por categoria, relação tempo × pontos, frequência de uso por dia/
-  categoria e percentual de registros que geraram task, com filtro por período (hoje/7
-  dias/30 dias/período customizado) — pensado para ser exportado (via impressão do
-  dashboard) em PDF e apresentado à gestão.
+- **Dashboard com evidências**: KPIs com **comparação vs período anterior** (deltas
+  ↑/↓ e números animados), totais por categoria, totais por dia, pontos por categoria,
+  **tempo por área**, **tempo por task** (cada Jira/Movidesk trabalhada, com sessões e
+  pontos), **mapa de calor semana × hora** (quando você trabalha), frequência de uso por
+  dia/categoria e % de registros que geraram task — filtro por período unificado (hoje/
+  7 dias/este mês/mês passado/personalizado). A exportação em PDF (Ctrl+P) inclui um
+  **resumo executivo** em narrativa automática, pronto para apresentar à gestão.
+- **Configurações → Preferências**: lembrete de cronômetro parado (intervalo, expediente
+  e dias úteis configuráveis) — o expediente também define as lacunas da linha do dia.
 - **Seletores de data/hora 100% customizados**: nada de `<input type="date">`/
   `type="time">` nativos — calendário (grade de dias) e seletor de hora/minuto/segundo
   (popover com 3 colunas roláveis por mouse, sem scrollbar visível) construídos do zero,
   reaproveitando o mesmo estilo visual do resto da aplicação, com boa legibilidade tanto
   no tema claro quanto no escuro.
-- **Animações de transição** entre rotas/abas da aplicação.
+- **Animações e fluidez**: transição entre rotas, entrada escalonada dos cards, números
+  dos KPIs animados, glow pulsante no cronômetro rodando — tudo CSS-first (sem lib de
+  animação JS), desligado automaticamente na impressão e para quem prefere menos
+  movimento (`prefers-reduced-motion`).
 - **Acesso individual**: uso pessoal, um único login por vez, sem tela de cadastro
   público — os usuários são criados manualmente no console do Firebase.
 

@@ -157,10 +157,55 @@
   background-color: color-mix(in oklch, var(--muted-foreground) 70%, transparent);
 }
 
+/* Presença visual do cronômetro rodando: pulsa a OPACIDADE do gradiente que
+   já existe no TimerCard (compositor-friendly — nunca animar box-shadow) e dos
+   blocos "em andamento" da linha do dia. Pausado não pulsa. */
+@keyframes timer-glow {
+  0%,
+  100% {
+    opacity: 0.06;
+  }
+  50% {
+    opacity: 0.16;
+  }
+}
+.timer-glow-running {
+  animation: timer-glow 3s ease-in-out infinite;
+}
+@keyframes timer-glow-block {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Acessibilidade: quem pediu menos movimento não recebe animação decorativa. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Relatório impresso/PDF do dashboard: força o tema claro (mesmo com .dark
    ativo na UI) e aperta espaçamentos — o app roda só em tema escuro, mas um
    relatório em fundo preto gasta tinta e fica com contraste ruim no papel. */
 @media print {
+  /* Sem isso, entradas com `fill-mode-backwards` + animation-delay imprimem
+     os cards no estado inicial (invisíveis). */
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
   .dark {
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);

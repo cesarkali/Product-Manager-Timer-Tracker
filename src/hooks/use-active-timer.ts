@@ -14,12 +14,13 @@ import {
 import { toast } from "sonner";
 import { db } from "@/lib/firebase/client";
 import { useAuth } from "@/hooks/use-auth";
-import type { ActiveTimer, ActionType, LinkedTask } from "@/lib/types";
+import { DESCRIPTION_MAX_LENGTH, type ActiveTimer, type ActionType, type LinkedTask } from "@/lib/types";
 import { formatDuration } from "@/lib/time/format";
 
 export interface ActiveTimerFields {
   tasks: LinkedTask[];
   comments: string | null;
+  description: string | null;
 }
 
 /** Tempo decorrido (ms) de um cronômetro, descontando os intervalos pausados.
@@ -83,6 +84,7 @@ export function useActiveTimer() {
         taskCreated: previousTasks.some((task) => task.type === "jira"),
         tasks: previousTasks,
         notes: activeTimer.comments ?? null,
+        description: activeTimer.description ?? null,
         source: "timer",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -95,6 +97,7 @@ export function useActiveTimer() {
       startTime: serverTimestamp(),
       tasks: [],
       comments: null,
+      description: null,
       pausedAt: null,
       accumulatedPausedSeconds: 0,
     });
@@ -129,6 +132,7 @@ export function useActiveTimer() {
       taskCreated: tasks.some((task) => task.type === "jira"),
       tasks,
       notes: activeTimer.comments ?? null,
+      description: activeTimer.description ?? null,
       source: "timer",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -168,7 +172,26 @@ export function useActiveTimer() {
       const value = patch.comments;
       normalized.comments = value && value.trim() ? value.trim().slice(0, 1000) : null;
     }
+    if ("description" in patch) {
+      const value = patch.description;
+      normalized.description =
+        value && value.trim() ? value.trim().slice(0, DESCRIPTION_MAX_LENGTH) : null;
+    }
     await updateDoc(doc(db, "users", user.uid, "activeTimer", "current"), normalized);
+  }
+
+  /** Corrige o horário de início do cronômetro em andamento ("na real comecei
+   * 10 minutos atrás"). Recusa início no futuro e, se pausado, início depois da
+   * pausa — retorna false para a UI avisar. Não mexe em
+   * `accumulatedPausedSeconds`; o tempo decorrido se recalcula sozinho. */
+  async function adjustStartTime(newStart: Date): Promise<boolean> {
+    if (!user || !activeTimer || !activeTimer.startTime) return false;
+    const limitMs = activeTimer.pausedAt ? activeTimer.pausedAt.toMillis() : Date.now();
+    if (newStart.getTime() >= limitMs) return false;
+    await updateDoc(doc(db, "users", user.uid, "activeTimer", "current"), {
+      startTime: Timestamp.fromDate(newStart),
+    });
+    return true;
   }
 
   async function discardTimer() {
@@ -186,6 +209,7 @@ export function useActiveTimer() {
     pauseTimer,
     resumeTimer,
     updateActiveTimerFields,
+    adjustStartTime,
     discardTimer,
   };
 }

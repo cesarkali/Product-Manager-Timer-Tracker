@@ -7,6 +7,16 @@ export interface UserProfile {
   createdAt: Timestamp;
   hasSeededActionTypes?: boolean;
   sidebarCollapsed?: boolean;
+  /** Lembrete "cadê o cronômetro?": desabilitado por padrão. */
+  reminderEnabled?: boolean;
+  /** Minutos de ociosidade antes de avisar (padrão 15). */
+  reminderMinutes?: number;
+  /** Início do expediente, "HH:mm" (padrão "08:00"). */
+  workStart?: string;
+  /** Fim do expediente, "HH:mm" (padrão "18:00"). */
+  workEnd?: string;
+  /** Dias úteis, 0=domingo..6=sábado (padrão seg–sex). */
+  workDays?: number[];
 }
 
 export interface ActionType {
@@ -18,10 +28,17 @@ export interface ActionType {
   order: number;
   /** Tecla numérica (1-9) para iniciar essa categoria direto no cronômetro. */
   shortcutKey?: number | null;
+  /** Área de negócio atendida (valor de AREA_OPTIONS) — agrupa categorias no
+   * dashboard. Ausente/null = "Sem área". */
+  area?: string | null;
   createdAt: Timestamp;
 }
 
 export type TimeEntrySource = "timer" | "manual";
+
+/** Limite da descrição curta ("o que você está fazendo?") — distinta dos
+ * comentários longos (`notes`, até 1000). */
+export const DESCRIPTION_MAX_LENGTH = 140;
 
 export const STORY_POINT_OPTIONS = [0, 1, 2, 3, 5, 8, 13, 21] as const;
 export type StoryPoints = (typeof STORY_POINT_OPTIONS)[number];
@@ -42,6 +59,9 @@ export interface TimeEntry {
   taskCreated: boolean;
   tasks: LinkedTask[];
   notes: string | null;
+  /** Descrição curta do que estava sendo feito (≤ DESCRIPTION_MAX_LENGTH).
+   * Ausente em registros anteriores à funcionalidade. */
+  description?: string | null;
   source: TimeEntrySource;
   /** Segundos pausados descontados entre `startTime` e `endTime`. Gravado
    * automaticamente ao fechar um registro vindo do cronômetro pausado;
@@ -57,6 +77,9 @@ export interface ActiveTimer {
   startTime: Timestamp;
   tasks: LinkedTask[];
   comments: string | null;
+  /** Descrição curta do que está sendo feito — herdada pelo registro ao parar.
+   * Ausente em docs criados antes da funcionalidade. */
+  description?: string | null;
   /** Momento em que o cronômetro foi pausado; `null`/ausente = rodando.
    * Ausente em docs criados antes da funcionalidade de pausa. */
   pausedAt?: Timestamp | null;

@@ -18,7 +18,7 @@ import { CustomDayPicker } from "@/components/shared/custom-day-picker";
 import { TimeOfDayPicker, type TimeOfDay } from "@/components/shared/time-of-day-picker";
 import { LinkedTasksEditor } from "@/components/shared/linked-tasks-editor";
 import { formatDayLabel } from "@/lib/time/format";
-import type { ActionType } from "@/lib/types";
+import { DESCRIPTION_MAX_LENGTH, type ActionType } from "@/lib/types";
 import type { ManualEntryInput } from "@/lib/validation";
 
 const NOTES_MAX_LENGTH = 1000;
@@ -234,6 +234,23 @@ export function EntryFormFields({
           )}
         </div>
       )}
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="description">Descrição (opcional)</Label>
+        <Input
+          id="description"
+          placeholder="O que você estava fazendo?"
+          maxLength={DESCRIPTION_MAX_LENGTH}
+          value={watch("description") ?? ""}
+          onChange={(e) => setValue("description", e.target.value)}
+        />
+        <p className="text-right text-xs text-muted-foreground">
+          {(watch("description") ?? "").length}/{DESCRIPTION_MAX_LENGTH}
+        </p>
+        {errors.description && (
+          <p className="text-sm text-destructive">{errors.description.message}</p>
+        )}
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <Label>Tasks vinculadas (opcional)</Label>

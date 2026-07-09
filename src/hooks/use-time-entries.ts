@@ -17,7 +17,7 @@ import {
 import { db } from "@/lib/firebase/client";
 import { useAuth } from "@/hooks/use-auth";
 import type { DateRange } from "@/lib/time/ranges";
-import type { LinkedTask, TimeEntry } from "@/lib/types";
+import { DESCRIPTION_MAX_LENGTH, type LinkedTask, type TimeEntry } from "@/lib/types";
 
 export interface ManualEntryData {
   actionTypeId: string;
@@ -27,10 +27,18 @@ export interface ManualEntryData {
   taskCreated: boolean;
   tasks: LinkedTask[];
   notes: string | null;
+  /** Descrição curta do que estava sendo feito (≤ DESCRIPTION_MAX_LENGTH). */
+  description?: string | null;
   /** Segundos pausados a descontar de `endTime - startTime` (só relevante ao
    * editar um registro vindo do cronômetro que foi pausado; nunca preenchido
    * por lançamento manual). */
   pausedSeconds?: number;
+}
+
+/** Firestore rejeita `undefined` — vazio/ausente vira sempre `null`. */
+function normalizeDescription(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed.slice(0, DESCRIPTION_MAX_LENGTH) : null;
 }
 
 export function useTimeEntries(range: DateRange) {
@@ -74,6 +82,7 @@ export function useTimeEntries(range: DateRange) {
       taskCreated: data.taskCreated || data.tasks.some((task) => task.type === "jira"),
       tasks: data.tasks,
       notes: data.notes,
+      description: normalizeDescription(data.description),
       source: "manual",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -110,6 +119,7 @@ export function useTimeEntries(range: DateRange) {
       taskCreated: data.taskCreated || data.tasks.some((task) => task.type === "jira"),
       tasks: data.tasks,
       notes: data.notes,
+      description: normalizeDescription(data.description),
       updatedAt: serverTimestamp(),
     });
   }

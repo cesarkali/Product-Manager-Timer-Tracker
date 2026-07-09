@@ -6,8 +6,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { LinkedTasksEditor } from "@/components/shared/linked-tasks-editor";
+import { QuickDescriptionInput } from "@/components/timer/quick-description-input";
+import { StartTimeAdjuster } from "@/components/timer/start-time-adjuster";
 import { CategoryIcon } from "@/lib/icons";
 import { categoryColor } from "@/lib/palette";
+import { cn } from "@/lib/utils";
 import { formatClockWithMillis } from "@/lib/time/format";
 import type { ActionType, LinkedTask } from "@/lib/types";
 import type { ActiveTimerFields } from "@/hooks/use-active-timer";
@@ -56,20 +59,26 @@ export function TimerCard({
   pausedAtMs,
   accumulatedPausedSeconds,
   fields,
+  descriptionSuggestions = [],
   onStop,
   onPause,
   onResume,
   onFieldsChange,
+  onAdjustStartTime,
 }: {
   actionType: ActionType | null;
   startTimeMs: number | null;
   pausedAtMs: number | null;
   accumulatedPausedSeconds: number;
   fields: ActiveTimerFields;
+  /** Descrições recentes da categoria ativa — viram chips de 1 clique. */
+  descriptionSuggestions?: string[];
   onStop: () => void;
   onPause: () => void;
   onResume: () => void;
   onFieldsChange: (patch: Partial<ActiveTimerFields>) => void;
+  /** Ajuste retroativo do início — retorna false se o horário for inválido. */
+  onAdjustStartTime?: (date: Date) => Promise<boolean>;
 }) {
   const color = actionType ? categoryColor(actionType.colorTag) : undefined;
   const isPaused = pausedAtMs != null;
@@ -84,10 +93,12 @@ export function TimerCard({
   const [trackedActionTypeId, setTrackedActionTypeId] = useState(actionType?.id);
   const [tasksValue, setTasksValue] = useState<LinkedTask[]>(fields.tasks ?? []);
   const [commentsValue, setCommentsValue] = useState(fields.comments ?? "");
+  const [descriptionValue, setDescriptionValue] = useState(fields.description ?? "");
   if (trackedActionTypeId !== actionType?.id) {
     setTrackedActionTypeId(actionType?.id);
     setTasksValue(fields.tasks ?? []);
     setCommentsValue(fields.comments ?? "");
+    setDescriptionValue(fields.description ?? "");
   }
 
   const tasksDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -106,7 +117,10 @@ export function TimerCard({
     >
       {color && (
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.08]"
+          className={cn(
+            "pointer-events-none absolute inset-0 opacity-[0.08]",
+            !isPaused && "timer-glow-running"
+          )}
           style={{ background: `radial-gradient(circle at 15% 20%, ${color}, transparent 60%)` }}
         />
       )}
@@ -130,7 +144,18 @@ export function TimerCard({
               00:00:00.00
             </p>
 
+            {startTimeMs != null && onAdjustStartTime && (
+              <StartTimeAdjuster startTimeMs={startTimeMs} onAdjust={onAdjustStartTime} />
+            )}
+
             <div className="flex w-full max-w-2xl flex-col gap-3 text-left">
+              <QuickDescriptionInput
+                value={descriptionValue}
+                onChange={setDescriptionValue}
+                onCommit={(value) => onFieldsChange({ description: value })}
+                suggestions={descriptionSuggestions}
+              />
+
               <LinkedTasksEditor
                 items={tasksValue}
                 onAdd={() =>

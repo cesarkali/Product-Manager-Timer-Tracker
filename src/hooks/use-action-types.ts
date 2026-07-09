@@ -134,6 +134,12 @@ export function useActionTypes() {
     await updateDoc(doc(db, "users", user.uid, "actionTypes", id), { shortcutKey });
   }
 
+  /** Define a área de negócio da categoria (valor de AREA_OPTIONS ou null). */
+  async function setActionTypeArea(id: string, area: string | null) {
+    if (!user) return;
+    await updateDoc(doc(db, "users", user.uid, "actionTypes", id), { area });
+  }
+
   async function setArchived(id: string, archived: boolean) {
     if (!user) return;
     await updateDoc(doc(db, "users", user.uid, "actionTypes", id), { archived });
@@ -194,6 +200,7 @@ export function useActionTypes() {
     setActionTypeIcon,
     setActionTypeColor,
     setActionTypeShortcut,
+    setActionTypeArea,
     setArchived,
     reorderActionTypes,
     deleteActionType,
