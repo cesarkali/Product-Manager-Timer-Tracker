@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BellRing } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { BellRing, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { TimeOfDayPicker, type TimeOfDay } from "@/components/shared/time-of-day-picker";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
+import { fireTimerReminder } from "@/hooks/use-timer-reminder";
 import { cn } from "@/lib/utils";
 
 const REMINDER_MINUTE_OPTIONS = [10, 15, 20, 30, 45, 60];
@@ -43,6 +45,7 @@ function toHourMinute(time: TimeOfDay): string {
 }
 
 export function PreferencesPanel() {
+  const router = useRouter();
   const { prefs, loading, updatePreferences } = useUserPreferences();
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | null>(
     () => (typeof Notification !== "undefined" ? Notification.permission : null)
@@ -56,6 +59,20 @@ export function PreferencesPanel() {
     }
     await updatePreferences({ reminderEnabled: enabled });
     toast.success(enabled ? "Lembrete ativado." : "Lembrete desativado.");
+  }
+
+  /** Dispara um exemplo do aviso na hora, ignorando expediente/ociosidade —
+   * força a notificação do navegador mesmo com a aba visível. */
+  async function handleTestReminder() {
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+    }
+    fireTimerReminder({
+      idleMinutes: prefs.reminderMinutes,
+      forceNotification: true,
+      onGoToToday: () => router.push("/timer"),
+    });
   }
 
   function toggleWorkDay(day: number) {
@@ -172,10 +189,28 @@ export function PreferencesPanel() {
           </p>
         </div>
 
-        <p className="border-t pt-4 text-xs text-muted-foreground">
-          Limite do navegador: a notificação funciona com a aba do PMTT aberta (mesmo em
-          segundo plano) — com a aba fechada, nenhum aviso é enviado.
-        </p>
+        <div className="flex flex-col gap-2 border-t pt-4">
+          <div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => void handleTestReminder()}
+            >
+              <Send className="h-3.5 w-3.5" />
+              Testar aviso agora
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Dispara um exemplo do aviso no app e da notificação do navegador (se permitida),
+            mesmo com a aba visível — não depende do lembrete estar ativado.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Limite do navegador: a notificação funciona com a aba do PMTT aberta (mesmo em
+            segundo plano) — com a aba fechada, nenhum aviso é enviado.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

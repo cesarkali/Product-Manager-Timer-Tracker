@@ -208,7 +208,7 @@ repck/
     │   │   ├── icon-picker.tsx            grade de ícones disponíveis
     │   │   └── color-picker.tsx           grade das 8 cores da paleta fixa
     │   ├── settings/{settings-content,preferences-panel}.tsx   tabs de /settings + painel de lembrete/expediente
-    │   └── dashboard/{dashboard-content,stat-tiles,category-totals-chart,category-points-chart,daily-totals-chart,area-totals-chart,task-time-table,week-hour-heatmap,executive-summary,category-frequency-table,date-range-filter,custom-calendar}.tsx
+    │   └── dashboard/{dashboard-content,stat-tiles,category-totals-chart,category-points-chart,daily-composition-chart,area-totals-chart,task-time-table,week-hour-heatmap,work-rhythm-card,executive-summary,category-frequency-table,date-range-filter,custom-calendar}.tsx
     ├── hooks/
     │   ├── use-auth.tsx                   contexto sobre onAuthStateChanged, upsert de perfil só na troca real de uid
     │   ├── use-action-types.ts            onSnapshot da coleção de categorias + seed idempotente + reorder/cor/ícone/área
@@ -491,8 +491,12 @@ escolhida manualmente por categoria via `ColorPicker`:
 
 - **Tempo por categoria**: barras horizontais (nomes de categoria são longos), ordenado
   decrescente, sem legenda separada (cada barra já é rotulada).
-- **Tempo por dia**: colunas, um único tom sequencial (é comparação de magnitude, não de
-  identidade entre séries).
+- **Composição do dia por área** (`DailyCompositionChart`, substituiu o antigo "Tempo
+  por dia" de tom único): com jornada fixa o total diário é quase constante (~8h) e não
+  informava nada — o que varia é a composição. Colunas empilhadas por área
+  (`areaColor`, "Sem área" no topo em cinza), legenda própria, tooltip com o tempo de
+  cada área; a altura da pilha ainda mostra o total do dia. Mostra uma dica para
+  atribuir áreas quando tudo ainda está "Sem área".
 - **Pontos por categoria**: soma de story points das tasks vinculadas, agrupada por
   categoria — mede complexidade/esforço de análise, não só tempo.
 - **Linha de KPIs**: cards com tempo total, nº de registros, % com task criada, total de
@@ -531,6 +535,11 @@ escolhida manualmente por categoria via `ColorPicker`:
   frases condicionais, sem dado = sem frase. Aparece logo abaixo do cabeçalho impresso.
 - **Frequência por dia/categoria**: tabela de quantas vezes cada categoria foi acionada no
   mesmo dia — evidencia rotinas que se repetem.
+- **Seções minimizáveis** (`CollapsibleSection` em `dashboard-content.tsx`): "Tempo por
+  task", "Frequência por dia" e "Registros do período" têm botão Minimizar/Expandir com
+  contagem de itens no título — em períodos de 30 dias essas listas ficam enormes. O
+  conteúdo colapsado fica oculto via CSS (`hidden` + `print:block`), não desmontado:
+  as seções que participam da impressão saem no PDF mesmo minimizadas na tela.
 - **Filtros de período** unificados entre dashboard e registros: Hoje · 7 dias · Este
   mês · Mês passado · Personalizado ("30d" saiu dos botões mas segue aceito na URL do
   dashboard por back-compat), afetando KPIs + gráficos + tabelas ao mesmo tempo.
@@ -608,6 +617,11 @@ o relógio se recalcula sozinho pelo `onSnapshot`.
   `new Notification` que foca a janela ao clicar. Throttle entre avisos persistido em
   `sessionStorage`. Ociosidade medida desde a transição timer→null; no mount sem timer,
   uma única leitura `orderBy startTime desc limit 1` usa o `endTime` do último registro.
+- **Botão "Testar aviso agora"** (painel de preferências): dispara um exemplo do toast +
+  notificação na hora via `fireTimerReminder` (mesma função do lembrete real, exportada
+  de `use-timer-reminder.ts`, com `forceNotification: true` para mostrar a notificação
+  mesmo com a aba visível), pedindo a permissão antes se ainda não foi decidida. Não
+  depende do lembrete estar ativado nem de expediente/ociosidade.
 - **Limite conhecido e comunicado na UI**: com a aba fechada nenhum aviso é enviado
   (sem service worker/Web Push por ora — candidato a evolução futura).
 

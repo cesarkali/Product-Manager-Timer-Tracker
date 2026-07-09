@@ -79,12 +79,15 @@ justificar prioridades, carga de trabalho ou pedidos como um aumento.
   para corrigir um lançamento feito errado. Mesmo um registro cuja categoria já foi
   excluída pode ser reatribuído a uma categoria válida.
 - **Dashboard com evidências**: KPIs com **comparação vs período anterior** (deltas
-  ↑/↓ e números animados), totais por categoria, totais por dia, pontos por categoria,
-  **tempo por área**, **tempo por task** (cada Jira/Movidesk trabalhada, com sessões e
-  pontos), **mapa de calor semana × hora** (quando você trabalha), frequência de uso por
-  dia/categoria e % de registros que geraram task — filtro por período unificado (hoje/
-  7 dias/este mês/mês passado/personalizado). A exportação em PDF (Ctrl+P) inclui um
-  **resumo executivo** em narrativa automática, pronto para apresentar à gestão.
+  ↑/↓ e números animados), totais por categoria, **composição de cada dia por área**
+  (barras empilhadas — com jornada fixa o total diário não informa, a composição sim),
+  pontos por categoria, **tempo por área**, **tempo por task** (cada Jira/Movidesk
+  trabalhada, com sessões e pontos), **mapa de calor semana × hora** + **ritmo de
+  trabalho** (dia mais produtivo, pico, dia típico, manhã×tarde×noite), frequência de
+  uso por dia/categoria e % de registros que geraram task — filtro por período unificado
+  (hoje/7 dias/este mês/mês passado/personalizado) e listas grandes **minimizáveis**.
+  A exportação em PDF (Ctrl+P) inclui um **resumo executivo** em narrativa automática,
+  pronto para apresentar à gestão.
 - **Configurações → Preferências**: lembrete de cronômetro parado (intervalo, expediente
   e dias úteis configuráveis) — o expediente também define as lacunas da linha do dia.
 - **Seletores de data/hora 100% customizados**: nada de `<input type="date">`/

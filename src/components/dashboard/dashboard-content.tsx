@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useActionTypes } from "@/hooks/use-action-types";
 import { useTimeEntries } from "@/hooks/use-time-entries";
 import { EditEntryDialog } from "@/components/entries/edit-entry-dialog";
@@ -14,7 +16,7 @@ import {
   type RangePreset,
 } from "@/lib/time/ranges";
 import { formatDayLabel, formatDateTimeLabel, toLocalIsoDate } from "@/lib/time/format";
-import { NO_AREA_LABEL } from "@/lib/areas";
+import { AREA_OPTIONS, NO_AREA_LABEL } from "@/lib/areas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -22,7 +24,10 @@ import { DateRangeFilter } from "@/components/dashboard/date-range-filter";
 import { StatTiles, type StatTilesPrevious } from "@/components/dashboard/stat-tiles";
 import { CategoryTotalsChart, type CategoryTotal } from "@/components/dashboard/category-totals-chart";
 import { CategoryPointsChart, type CategoryPoints } from "@/components/dashboard/category-points-chart";
-import { DailyTotalsChart, type DailyTotal } from "@/components/dashboard/daily-totals-chart";
+import {
+  DailyCompositionChart,
+  type DailyCompositionRow,
+} from "@/components/dashboard/daily-composition-chart";
 import { AreaTotalsChart, type AreaTotal } from "@/components/dashboard/area-totals-chart";
 import { TaskTimeTable, type TaskAggregate } from "@/components/dashboard/task-time-table";
 import { WeekHourHeatmap } from "@/components/dashboard/week-hour-heatmap";
@@ -33,6 +38,56 @@ import {
   type CategoryDayFrequency,
 } from "@/components/dashboard/category-frequency-table";
 import { EntriesTable } from "@/components/entries/entries-table";
+
+/** Seção de lista minimizável do dashboard (Tempo por task, Frequência,
+ * Registros) — em períodos longos essas tabelas ficam enormes. O conteúdo
+ * colapsado fica só oculto via CSS (não desmontado): quando a seção participa
+ * da impressão (`printVisible`), ela sai no PDF mesmo minimizada na tela. */
+function CollapsibleSection({
+  title,
+  description,
+  count,
+  printVisible = false,
+  children,
+}: {
+  title: string;
+  description?: string;
+  /** Nº de itens da lista, visível também com a seção minimizada. */
+  count: number;
+  /** Se a seção entra na impressão (sempre expandida no papel). */
+  printVisible?: boolean;
+  children: React.ReactNode;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+  return (
+    <div className={cn("flex flex-col gap-3 break-inside-avoid", !printVisible && "print:hidden")}>
+      <div className="flex items-start justify-between gap-4 print:hidden">
+        <div>
+          <h2 className="text-lg font-semibold">
+            {title}{" "}
+            <span className="text-sm font-normal text-muted-foreground">({count})</span>
+          </h2>
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => setCollapsed((current) => !current)}
+          className="shrink-0 gap-1 text-muted-foreground"
+          aria-expanded={!collapsed}
+        >
+          <ChevronDown
+            className={cn("h-4 w-4 transition-transform duration-200", collapsed && "-rotate-90")}
+          />
+          {collapsed ? "Expandir" : "Minimizar"}
+        </Button>
+      </div>
+      {printVisible && <h2 className="hidden text-base font-semibold print:block">{title}</h2>}
+      <div className={cn(collapsed && "hidden", printVisible && "print:block")}>{children}</div>
+    </div>
+  );
+}
 
 // "30d" segue aceito na URL por back-compat com links salvos, mesmo sem botão.
 function isRangePreset(value: string | null): value is RangePreset {
@@ -251,16 +306,33 @@ export function DashboardContent() {
     });
   }, [entries, actionTypesById]);
 
-  const dailyTotals: DailyTotal[] = useMemo(() => {
-    const totals = new Map<string, number>();
+  // Composição de cada dia por área (com jornada fixa o TOTAL diário é quase
+  // constante — o que informa é a distribuição dentro do dia).
+  const dailyComposition = useMemo(() => {
+    const dayMap = new Map<string, { dayKey: string; row: DailyCompositionRow }>();
+    const areaSet = new Set<string>();
     for (const entry of entries) {
-      const key = formatDayLabel(entry.startTime.toDate());
-      totals.set(key, (totals.get(key) ?? 0) + entry.durationSeconds);
+      const area = actionTypesById.get(entry.actionTypeId)?.area ?? NO_AREA_LABEL;
+      areaSet.add(area);
+      const date = entry.startTime.toDate();
+      const dayKey = toLocalIsoDate(date);
+      let item = dayMap.get(dayKey);
+      if (!item) {
+        item = { dayKey, row: { dayLabel: formatDayLabel(date) } };
+        dayMap.set(dayKey, item);
+      }
+      item.row[area] = ((item.row[area] as number | undefined) ?? 0) + entry.durationSeconds;
     }
-    return Array.from(totals.entries())
-      .map(([dayLabel, totalSeconds]) => ({ dayLabel, totalSeconds }))
-      .reverse();
-  }, [entries]);
+    // Ordem estável de empilhamento: áreas na ordem fixa, "Sem área" no topo.
+    const areas = [
+      ...AREA_OPTIONS.filter((area) => areaSet.has(area)),
+      ...(areaSet.has(NO_AREA_LABEL) ? [NO_AREA_LABEL] : []),
+    ];
+    const rows = Array.from(dayMap.values())
+      .sort((a, b) => a.dayKey.localeCompare(b.dayKey))
+      .map((item) => item.row);
+    return { rows, areas };
+  }, [entries, actionTypesById]);
 
   const PRESET_LABELS: Partial<Record<RangePreset, string>> = {
     today: "Hoje",
@@ -339,7 +411,7 @@ export function DashboardContent() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 print:grid-cols-1 print:gap-4">
         <CategoryTotalsChart data={categoryTotals} />
-        <DailyTotalsChart data={dailyTotals} />
+        <DailyCompositionChart data={dailyComposition.rows} areas={dailyComposition.areas} />
         <CategoryPointsChart data={categoryPoints} />
         <AreaTotalsChart data={areaTotals} />
       </div>
@@ -349,40 +421,33 @@ export function DashboardContent() {
         <WorkRhythmCard entries={entries} />
       </div>
 
-      <div className="flex flex-col gap-3 break-inside-avoid">
-        <div className="print:hidden">
-          <h2 className="text-lg font-semibold">Tempo por task</h2>
-          <p className="text-sm text-muted-foreground">
-            Cada task Jira/Movidesk trabalhada no período, com o tempo somado e o número de
-            sessões — evidência direta do que foi entregue.
-          </p>
-        </div>
-        <h2 className="hidden text-base font-semibold print:block">Tempo por task</h2>
+      <CollapsibleSection
+        title="Tempo por task"
+        description="Cada task Jira/Movidesk trabalhada no período, com o tempo somado e o número de sessões — evidência direta do que foi entregue."
+        count={taskAggregates.length}
+        printVisible
+      >
         <Card className="print:shadow-none">
           <CardContent>
             <TaskTimeTable data={taskAggregates} />
           </CardContent>
         </Card>
-      </div>
+      </CollapsibleSection>
 
-      <div className="flex flex-col gap-3 break-inside-avoid">
-        <div className="print:hidden">
-          <h2 className="text-lg font-semibold">Frequência por dia</h2>
-          <p className="text-sm text-muted-foreground">
-            Quantas vezes cada categoria foi acionada no mesmo dia — útil pra ver rotinas
-            que se repetem várias vezes num dia só.
-          </p>
-        </div>
-        <h2 className="hidden text-base font-semibold print:block">Frequência por dia</h2>
+      <CollapsibleSection
+        title="Frequência por dia"
+        description="Quantas vezes cada categoria foi acionada no mesmo dia — útil pra ver rotinas que se repetem várias vezes num dia só."
+        count={categoryDayFrequency.length}
+        printVisible
+      >
         <Card className="print:shadow-none">
           <CardContent>
             <CategoryFrequencyTable data={categoryDayFrequency} />
           </CardContent>
         </Card>
-      </div>
+      </CollapsibleSection>
 
-      <div className="flex flex-col gap-3 print:hidden">
-        <h2 className="text-lg font-semibold">Registros do período</h2>
+      <CollapsibleSection title="Registros do período" count={entries.length}>
         <Card>
           <CardContent>
             <EntriesTable
@@ -394,7 +459,7 @@ export function DashboardContent() {
             />
           </CardContent>
         </Card>
-      </div>
+      </CollapsibleSection>
 
       <EditEntryDialog
         entry={editingEntry}

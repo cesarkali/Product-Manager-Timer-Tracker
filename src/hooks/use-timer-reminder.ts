@@ -20,6 +20,43 @@ function parseHourMinuteToday(value: string, now: Date): number {
   return d.getTime();
 }
 
+/** Dispara o aviso de cronômetro parado: toast no app + notificação do
+ * navegador. Compartilhada entre o lembrete real (que só notifica o sistema
+ * com a aba em segundo plano) e o botão "Testar aviso" das preferências
+ * (`forceNotification: true` — mostra a notificação mesmo com a aba visível). */
+export function fireTimerReminder({
+  idleMinutes,
+  onGoToToday,
+  forceNotification = false,
+}: {
+  idleMinutes: number;
+  onGoToToday: () => void;
+  forceNotification?: boolean;
+}) {
+  toast.warning(`Sem cronômetro há ${idleMinutes} min`, {
+    description: "O que você está fazendo agora? Registre para não perder a evidência.",
+    duration: 15_000,
+    action: { label: "Ir para Hoje", onClick: onGoToToday },
+  });
+
+  if (
+    typeof Notification !== "undefined" &&
+    Notification.permission === "granted" &&
+    (forceNotification || document.visibilityState === "hidden")
+  ) {
+    const notification = new Notification("PMTT — cronômetro parado", {
+      body: `Sem registro há ${idleMinutes} min. Clique para voltar e cronometrar.`,
+      icon: "/icon.svg",
+      tag: "pmtt-timer-reminder",
+    });
+    notification.onclick = () => {
+      window.focus();
+      onGoToToday();
+      notification.close();
+    };
+  }
+}
+
 /** Lembrete "cadê o cronômetro?": dentro do expediente configurado, se nenhum
  * timer estiver rodando há mais que `reminderMinutes`, dispara um toast (com
  * ação para ir à tela Hoje) e — se a permissão foi concedida e a aba está em
@@ -103,28 +140,7 @@ export function useTimerReminder() {
       sessionStorage.setItem(LAST_NOTIFIED_KEY, String(nowMs));
 
       const idleMinutes = Math.floor(idleMs / 60_000);
-      toast.warning(`Sem cronômetro há ${idleMinutes} min`, {
-        description: "O que você está fazendo agora? Registre para não perder a evidência.",
-        duration: 15_000,
-        action: { label: "Ir para Hoje", onClick: () => router.push("/timer") },
-      });
-
-      if (
-        typeof Notification !== "undefined" &&
-        Notification.permission === "granted" &&
-        document.visibilityState === "hidden"
-      ) {
-        const notification = new Notification("PMTT — cronômetro parado", {
-          body: `Sem registro há ${idleMinutes} min. Clique para voltar e cronometrar.`,
-          icon: "/icon.svg",
-          tag: "pmtt-timer-reminder",
-        });
-        notification.onclick = () => {
-          window.focus();
-          router.push("/timer");
-          notification.close();
-        };
-      }
+      fireTimerReminder({ idleMinutes, onGoToToday: () => router.push("/timer") });
     }
 
     const interval = setInterval(check, CHECK_INTERVAL_MS);
