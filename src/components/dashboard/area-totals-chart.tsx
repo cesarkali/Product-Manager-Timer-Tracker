@@ -2,7 +2,6 @@
 
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { areaColor } from "@/lib/areas";
 import { formatDuration } from "@/lib/time/format";
 
 export interface AreaTotal {
@@ -14,7 +13,13 @@ export interface AreaTotal {
 
 /** Distribuição do tempo por área de negócio — barras horizontais, mesmo
  * padrão visual do CategoryTotalsChart (identidade por cor da paleta fixa). */
-export function AreaTotalsChart({ data }: { data: AreaTotal[] }) {
+export function AreaTotalsChart({
+  data,
+  colorFor,
+}: {
+  data: AreaTotal[];
+  colorFor: (area: string) => string;
+}) {
   if (data.length === 0) {
     return (
       <Card>
@@ -70,7 +75,7 @@ export function AreaTotalsChart({ data }: { data: AreaTotal[] }) {
               />
               <Bar dataKey="totalSeconds" radius={[0, 4, 4, 0]}>
                 {data.map((item) => (
-                  <Cell key={item.area} fill={areaColor(item.area)} />
+                  <Cell key={item.area} fill={colorFor(item.area)} />
                 ))}
                 <LabelList
                   dataKey="sharePercent"

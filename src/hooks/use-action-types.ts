@@ -134,7 +134,7 @@ export function useActionTypes() {
     await updateDoc(doc(db, "users", user.uid, "actionTypes", id), { shortcutKey });
   }
 
-  /** Define a área de negócio da categoria (valor de AREA_OPTIONS ou null). */
+  /** Define a área de negócio da categoria (nome de uma BusinessArea ou null). */
   async function setActionTypeArea(id: string, area: string | null) {
     if (!user) return;
     await updateDoc(doc(db, "users", user.uid, "actionTypes", id), { area });

@@ -2,7 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { areaColor, NO_AREA_LABEL } from "@/lib/areas";
+import { NO_AREA_LABEL } from "@/lib/areas";
 import { formatDuration } from "@/lib/time/format";
 
 /** Uma linha por dia; cada área presente vira uma chave dinâmica com os
@@ -19,10 +19,12 @@ export interface DailyCompositionRow {
 export function DailyCompositionChart({
   data,
   areas,
+  colorFor,
 }: {
   data: DailyCompositionRow[];
   /** Áreas presentes no período, na ordem de empilhamento (Sem área por último). */
   areas: string[];
+  colorFor: (area: string) => string;
 }) {
   if (data.length === 0) {
     return (
@@ -91,7 +93,7 @@ export function DailyCompositionChart({
                   key={area}
                   dataKey={area}
                   stackId="day"
-                  fill={areaColor(area)}
+                  fill={colorFor(area)}
                   // Só o segmento do topo da pilha ganha canto arredondado.
                   radius={index === areas.length - 1 ? [4, 4, 0, 0] : undefined}
                 />
@@ -105,7 +107,7 @@ export function DailyCompositionChart({
             <span key={area} className="inline-flex items-center gap-1.5">
               <span
                 className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: areaColor(area) }}
+                style={{ backgroundColor: colorFor(area) }}
               />
               {area}
             </span>

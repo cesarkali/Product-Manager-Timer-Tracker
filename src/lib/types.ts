@@ -6,6 +6,7 @@ export interface UserProfile {
   role: "pm";
   createdAt: Timestamp;
   hasSeededActionTypes?: boolean;
+  hasSeededBusinessAreas?: boolean;
   sidebarCollapsed?: boolean;
   /** Lembrete "cadê o cronômetro?": desabilitado por padrão. */
   reminderEnabled?: boolean;
@@ -19,6 +20,24 @@ export interface UserProfile {
   workDays?: number[];
 }
 
+/** Área de negócio — agrupa categorias no dashboard ("Tempo por área"). CRUD
+ * completo pelo usuário em Configurações → Áreas, mesmo padrão de ActionType
+ * (cor da paleta fixa, arquivar/reativar, excluir). As 8 áreas originais (antes
+ * uma lista fixa em código) são semeadas automaticamente no primeiro acesso ao
+ * painel, igual às categorias padrão. */
+export interface BusinessArea {
+  id: string;
+  name: string;
+  /** Índice string na mesma paleta de 8 cores das categorias. Opcional para
+   * compatibilidade com docs criados antes deste campo existir. */
+  colorTag?: string;
+  /** Área arquivada some do seletor de área das categorias, mas categorias
+   * que já a usam continuam mostrando nome e cor normalmente. Ausente = ativa. */
+  archived?: boolean;
+  order: number;
+  createdAt: Timestamp;
+}
+
 export interface ActionType {
   id: string;
   name: string;
@@ -28,7 +47,7 @@ export interface ActionType {
   order: number;
   /** Tecla numérica (1-9) para iniciar essa categoria direto no cronômetro. */
   shortcutKey?: number | null;
-  /** Área de negócio atendida (valor de AREA_OPTIONS) — agrupa categorias no
+  /** Área de negócio atendida (nome de uma BusinessArea) — agrupa categorias no
    * dashboard. Ausente/null = "Sem área". */
   area?: string | null;
   createdAt: Timestamp;

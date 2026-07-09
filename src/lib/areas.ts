@@ -1,26 +1,17 @@
-import { CATEGORY_PALETTE, DELETED_CATEGORY_COLOR } from "@/lib/palette";
-
-/** Áreas de negócio disponíveis para agrupar categorias no dashboard.
- * Lista fixa de propósito ("Outro" é a válvula de escape) — manter em sincronia
- * com o Select da tabela de categorias. */
-export const AREA_OPTIONS = [
-  "Suporte",
-  "Desenvolvimento",
-  "CS",
-  "Gestão",
-  "Financeiro",
-  "Implantação",
-  "Produto",
-  "Outro",
-] as const;
-
-export type AreaOption = (typeof AREA_OPTIONS)[number];
+import { categoryColor, DELETED_CATEGORY_COLOR } from "@/lib/palette";
+import type { BusinessArea } from "@/lib/types";
 
 export const NO_AREA_LABEL = "Sem área";
 
-/** Cor estável por área (mesma paleta das categorias); "Sem área" fica cinza. */
-export function areaColor(area: string | null | undefined): string {
-  const index = AREA_OPTIONS.indexOf(area as AreaOption);
-  if (index < 0) return DELETED_CATEGORY_COLOR.dark;
-  return CATEGORY_PALETTE[index % CATEGORY_PALETTE.length].dark;
+/** Resolve a cor de uma área a partir do registro (`BusinessArea.colorTag`,
+ * mesma paleta das categorias). Área não encontrada (excluída, ou "Sem área")
+ * cai no cinza de "excluída" — mesmo tratamento das categorias excluídas. */
+export function areaColor(
+  area: string | null | undefined,
+  businessAreas: BusinessArea[]
+): string {
+  if (!area) return DELETED_CATEGORY_COLOR.dark;
+  const match = businessAreas.find((a) => a.name === area);
+  if (!match) return DELETED_CATEGORY_COLOR.dark;
+  return categoryColor(match.colorTag);
 }

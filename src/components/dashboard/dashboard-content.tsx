@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useActionTypes } from "@/hooks/use-action-types";
+import { useBusinessAreas } from "@/hooks/use-business-areas";
 import { useTimeEntries } from "@/hooks/use-time-entries";
 import { EditEntryDialog } from "@/components/entries/edit-entry-dialog";
 import type { TimeEntry } from "@/lib/types";
@@ -16,7 +17,7 @@ import {
   type RangePreset,
 } from "@/lib/time/ranges";
 import { formatDayLabel, formatDateTimeLabel, toLocalIsoDate } from "@/lib/time/format";
-import { AREA_OPTIONS, NO_AREA_LABEL } from "@/lib/areas";
+import { areaColor, NO_AREA_LABEL } from "@/lib/areas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -151,6 +152,15 @@ export function DashboardContent() {
   }, [preset, customStartMs, customEndMs]);
 
   const { actionTypes, actionTypesById } = useActionTypes();
+  const { businessAreas } = useBusinessAreas();
+  const colorForArea = useMemo(
+    () => (area: string) => areaColor(area, businessAreas),
+    [businessAreas]
+  );
+  const businessAreaOrder = useMemo(
+    () => new Map(businessAreas.map((a) => [a.name, a.order ?? 0])),
+    [businessAreas]
+  );
   const { entries, deleteEntry, updateEntry, updateEntryFull } = useTimeEntries(range);
   // Segunda assinatura, do período imediatamente anterior — base dos deltas
   // dos KPIs. Mesmo volume da principal; custo desprezível no uso atual.
@@ -323,16 +333,18 @@ export function DashboardContent() {
       }
       item.row[area] = ((item.row[area] as number | undefined) ?? 0) + entry.durationSeconds;
     }
-    // Ordem estável de empilhamento: áreas na ordem fixa, "Sem área" no topo.
+    // Ordem estável de empilhamento: áreas na ordem cadastrada, "Sem área" no topo.
     const areas = [
-      ...AREA_OPTIONS.filter((area) => areaSet.has(area)),
+      ...Array.from(areaSet)
+        .filter((area) => area !== NO_AREA_LABEL)
+        .sort((a, b) => (businessAreaOrder.get(a) ?? 0) - (businessAreaOrder.get(b) ?? 0)),
       ...(areaSet.has(NO_AREA_LABEL) ? [NO_AREA_LABEL] : []),
     ];
     const rows = Array.from(dayMap.values())
       .sort((a, b) => a.dayKey.localeCompare(b.dayKey))
       .map((item) => item.row);
     return { rows, areas };
-  }, [entries, actionTypesById]);
+  }, [entries, actionTypesById, businessAreaOrder]);
 
   const PRESET_LABELS: Partial<Record<RangePreset, string>> = {
     today: "Hoje",
@@ -411,9 +423,13 @@ export function DashboardContent() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 print:grid-cols-1 print:gap-4">
         <CategoryTotalsChart data={categoryTotals} />
-        <DailyCompositionChart data={dailyComposition.rows} areas={dailyComposition.areas} />
+        <DailyCompositionChart
+          data={dailyComposition.rows}
+          areas={dailyComposition.areas}
+          colorFor={colorForArea}
+        />
         <CategoryPointsChart data={categoryPoints} />
-        <AreaTotalsChart data={areaTotals} />
+        <AreaTotalsChart data={areaTotals} colorFor={colorForArea} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 print:hidden">

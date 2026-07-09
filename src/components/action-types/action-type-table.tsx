@@ -30,9 +30,9 @@ import { ColorPicker } from "@/components/action-types/color-picker";
 import { ShortcutPicker } from "@/components/action-types/shortcut-picker";
 import { CategoryIcon } from "@/lib/icons";
 import { categoryColor } from "@/lib/palette";
-import { AREA_OPTIONS, NO_AREA_LABEL } from "@/lib/areas";
+import { NO_AREA_LABEL } from "@/lib/areas";
 import { cn } from "@/lib/utils";
-import type { ActionType } from "@/lib/types";
+import type { ActionType, BusinessArea } from "@/lib/types";
 
 const NO_AREA_VALUE = "__none__";
 
@@ -46,6 +46,7 @@ export function ActionTypeTable({
   onArchiveToggle,
   onReorder,
   onDelete,
+  areas,
 }: {
   actionTypes: ActionType[];
   onRename: (id: string, name: string) => Promise<void>;
@@ -56,6 +57,8 @@ export function ActionTypeTable({
   onArchiveToggle: (id: string, archived: boolean) => Promise<void>;
   onReorder: (orderedIds: string[]) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  /** Áreas ativas cadastradas em Configurações → Áreas, para o Select desta tabela. */
+  areas: BusinessArea[];
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
@@ -211,9 +214,9 @@ export function ActionTypeTable({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NO_AREA_VALUE}>{NO_AREA_LABEL}</SelectItem>
-                    {AREA_OPTIONS.map((area) => (
-                      <SelectItem key={area} value={area}>
-                        {area}
+                    {areas.map((area) => (
+                      <SelectItem key={area.id} value={area.name}>
+                        {area.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useActionTypes } from "@/hooks/use-action-types";
+import { useBusinessAreas } from "@/hooks/use-business-areas";
 import { ActionTypeForm } from "@/components/action-types/action-type-form";
 import { ActionTypeTable } from "@/components/action-types/action-type-table";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ export function ActionTypesPanel() {
     deleteActionType,
     restoreDefaultActionTypes,
   } = useActionTypes();
+  const { activeBusinessAreas } = useBusinessAreas();
   const [restoring, setRestoring] = useState(false);
 
   async function handleRestore() {
@@ -78,6 +80,7 @@ export function ActionTypesPanel() {
                 onArchiveToggle={setArchived}
                 onReorder={reorderActionTypes}
                 onDelete={deleteActionType}
+                areas={activeBusinessAreas}
               />
             </>
           )}

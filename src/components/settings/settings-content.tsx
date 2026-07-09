@@ -4,9 +4,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { ActionTypesPanel } from "@/components/action-types/action-types-panel";
+import { AreasPanel } from "@/components/settings/areas-panel";
 import { PreferencesPanel } from "@/components/settings/preferences-panel";
 
-const TABS = ["categorias", "preferencias"] as const;
+const TABS = ["categorias", "areas", "preferencias"] as const;
 type SettingsTab = (typeof TABS)[number];
 
 export function SettingsContent() {
@@ -34,12 +35,18 @@ export function SettingsContent() {
           <TabsTrigger value="categorias" className="px-4">
             Categorias
           </TabsTrigger>
+          <TabsTrigger value="areas" className="px-4">
+            Áreas
+          </TabsTrigger>
           <TabsTrigger value="preferencias" className="px-4">
             Preferências
           </TabsTrigger>
         </TabsList>
         <TabsContent value="categorias" className="mt-4">
           <ActionTypesPanel />
+        </TabsContent>
+        <TabsContent value="areas" className="mt-4">
+          <AreasPanel />
         </TabsContent>
         <TabsContent value="preferencias" className="mt-4">
           <PreferencesPanel />

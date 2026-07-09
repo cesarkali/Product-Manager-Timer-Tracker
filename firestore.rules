@@ -23,6 +23,10 @@ service cloud.firestore {
       return !(field in data) || data[field] == null || data[field] is timestamp;
     }
 
+    function isOptionalBool(data, field) {
+      return !(field in data) || data[field] == null || data[field] is bool;
+    }
+
     function isValidActionType(data) {
       return data.keys().hasAll(['name', 'colorTag', 'icon', 'archived', 'order', 'createdAt'])
         && data.name is string && data.name.size() > 0 && data.name.size() <= 120
@@ -32,6 +36,14 @@ service cloud.firestore {
         && data.order is number
         && isOptionalNumber(data, 'shortcutKey')
         && isOptionalString(data, 'area');
+    }
+
+    function isValidBusinessArea(data) {
+      return data.keys().hasAll(['name', 'order', 'createdAt'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 120
+        && data.order is number
+        && isOptionalString(data, 'colorTag')
+        && isOptionalBool(data, 'archived');
     }
 
     function isValidTasksField(data) {
@@ -71,6 +83,13 @@ service cloud.firestore {
         allow read: if isOwner(uid);
         allow create: if isOwner(uid) && isValidActionType(request.resource.data);
         allow update: if isOwner(uid) && isValidActionType(request.resource.data);
+        allow delete: if isOwner(uid);
+      }
+
+      match /businessAreas/{areaId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && isValidBusinessArea(request.resource.data);
+        allow update: if isOwner(uid) && isValidBusinessArea(request.resource.data);
         allow delete: if isOwner(uid);
       }
 

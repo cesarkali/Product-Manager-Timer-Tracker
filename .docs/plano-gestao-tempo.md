@@ -98,7 +98,14 @@ users/{uid}                              perfil — criado no primeiro login (la
 users/{uid}/actionTypes/{id}             { name, colorTag, icon, archived, order, shortcutKey?,
                                             area?, createdAt }
                                           area é opcional (null/ausente = "Sem área") — agrupa
-                                          categorias no gráfico "Tempo por área" do dashboard
+                                          categorias no gráfico "Tempo por área" do dashboard;
+                                          é uma string livre (nome de uma BusinessArea),
+                                          vínculo por nome, não por id (ver §Áreas de negócio)
+users/{uid}/businessAreas/{id}           { name, colorTag?, archived?, order, createdAt }
+                                          áreas de negócio — CRUD completo pelo usuário em
+                                          Configurações → Áreas (ver §Áreas de negócio: CRUD
+                                          completo); colorTag/archived opcionais só por
+                                          compatibilidade com o schema inicial
 users/{uid}/timeEntries/{id}             { actionTypeId, actionTypeName, startTime, endTime,
                                             durationSeconds, pausedSeconds, taskCreated,
                                             tasks: LinkedTask[], notes, description?,
@@ -207,11 +214,12 @@ repck/
     │   │   ├── action-type-table.tsx      drag-and-drop de ordenação, ícone/cor, renomear, área, atalho, arquivar, excluir
     │   │   ├── icon-picker.tsx            grade de ícones disponíveis
     │   │   └── color-picker.tsx           grade das 8 cores da paleta fixa
-    │   ├── settings/{settings-content,preferences-panel}.tsx   tabs de /settings + painel de lembrete/expediente
+    │   ├── settings/{settings-content,preferences-panel,areas-panel,business-area-table}.tsx   tabs de /settings (Categorias | Áreas | Preferências)
     │   └── dashboard/{dashboard-content,stat-tiles,category-totals-chart,category-points-chart,daily-composition-chart,area-totals-chart,task-time-table,week-hour-heatmap,work-rhythm-card,executive-summary,category-frequency-table,date-range-filter,custom-calendar}.tsx
     ├── hooks/
     │   ├── use-auth.tsx                   contexto sobre onAuthStateChanged, upsert de perfil só na troca real de uid
     │   ├── use-action-types.ts            onSnapshot da coleção de categorias + seed idempotente + reorder/cor/ícone/área
+    │   ├── use-business-areas.ts          onSnapshot de businessAreas + seed idempotente + CRUD completo (renomear com cascata, cor, arquivar, excluir com desvínculo)
     │   ├── use-active-timer.ts            onSnapshot do activeTimer + tick de 1s + start/stop/pause/resume + descrição + adjustStartTime
     │   ├── use-time-entries.ts            onSnapshot com query de intervalo de datas + updateEntryFull (com description)
     │   ├── use-user-preferences.ts        lembrete/expediente em users/{uid} (updateDoc com patch, preserva campos existentes)
@@ -370,7 +378,7 @@ Testar no "Rules playground" do console (Firestore → Rules) antes de confiar e
 >    (tempo pausado descontado de `endTime - startTime`), gravado ao fechar um registro
 >    vindo do cronômetro e usado para não recalcular a duração errada ao editar um
 >    registro que teve pausas (ver §Lógica do timer).
-> 7. **Mais recente**: categorias ganharam o campo opcional `area` (área de negócio,
+> 7. Categorias ganharam o campo opcional `area` (área de negócio,
 >    para o gráfico "Tempo por área" e o KPI "Área principal" do dashboard); cronômetro
 >    ativo e registros de tempo ganharam o campo opcional `description` (descrição
 >    rápida "o que você está fazendo?", ≤140 caracteres, distinta dos comentários
@@ -380,6 +388,14 @@ Testar no "Rules playground" do console (Firestore → Rules) antes de confiar e
 >    compatibilidade: como as regras usam `hasAll` (sem `hasOnly`), campos extras já
 >    eram aceitos antes — publicar esta versão serve para validar o *tipo* dos campos
 >    novos; app novo com regras antigas não quebra, nem o contrário.
+> 8. **Mais recente**: nova subcoleção `users/{uid}/businessAreas` (CRUD completo de
+>    áreas de negócio em `Configurações → Áreas`, substituindo a antiga lista fixa
+>    `AREA_OPTIONS`) — `{ name, colorTag?, archived?, order, createdAt }`, validada por
+>    `isValidBusinessArea` (`colorTag`/`archived` opcionais via `isOptionalString`/
+>    `isOptionalBool`, nova função). Não muda nenhum documento existente; só passa a
+>    permitir ler/criar/editar/excluir essa coleção nova. Sem essa publicação, cadastrar,
+>    renomear, recolorir, arquivar ou excluir uma área falha com
+>    painel mostraria a lista de áreas próprias sempre vazia).
 >
 > As preferências de lembrete/expediente (`reminderEnabled`, `reminderMinutes`,
 > `workStart`, `workEnd`, `workDays`) vivem no próprio doc `users/{uid}`, cujo update
@@ -647,7 +663,8 @@ o relógio se recalcula sozinho pelo `onSnapshot`.
   (tecla 1-9) e `area?` (área de negócio).
 - **Área**: Select por linha na tabela ("Sem área" + as 8 opções fixas de
   `AREA_OPTIONS` em `src/lib/areas.ts` — lista fixa de propósito, "Outro" é a válvula
-  de escape). Alimenta o gráfico "Tempo por área" e o KPI "Área principal".
+  de escape — **+** as áreas cadastradas pelo usuário, ver abaixo). Alimenta o gráfico
+  "Tempo por área" e o KPI "Área principal".
 - **Troca de ícone**: popover com `IconPicker` (grade de ícones), disparado ao clicar no
   ícone da categoria na tabela.
 - **Troca de cor**: popover com `ColorPicker` (grade das 8 cores fixas), disparado ao
@@ -664,6 +681,55 @@ o relógio se recalcula sozinho pelo `onSnapshot`.
   não há nenhuma categoria cadastrada — cria as categorias padrão que ainda faltam
   (comparando por nome, sem duplicar), útil se a conta ficou sem categorias por causa do
   bug de seed descrito em §Bugs corrigidos.
+
+### Áreas de negócio: CRUD completo (aba "Áreas" de /settings)
+
+As áreas de negócio deixaram de ser uma lista fixa em código (`AREA_OPTIONS`) e viraram
+um registro no Firestore com CRUD completo, no mesmo padrão de `ActionType`
+(`Configurações → Áreas`, `AreasPanel` + `BusinessAreaTable`, hook `useBusinessAreas`):
+
+- Coleção `users/{uid}/businessAreas/{id}` — `{ name, colorTag?, archived?, order,
+  createdAt }`. `colorTag` é o mesmo índice string da paleta de 8 cores das categorias
+  (`categoryColor`/`ColorPicker`, reaproveitados) e `archived?`/`colorTag?` são opcionais
+  para compatibilidade com o schema inicial (docs sem esses campos tratam `archived`
+  como `false` e a cor cai no cinza de "excluída" até você definir uma).
+- **Seed automático**: as 8 áreas originais (`src/lib/default-business-areas.ts`) são
+  criadas no primeiro acesso a uma conta sem nenhuma área — mesma trava idempotente por
+  transação (`hasSeededBusinessAreas` em `users/{uid}`) usada no seed de categorias, pelo
+  mesmo motivo (evitar duplicar em corrida entre listeners).
+- **Restaurar áreas padrão** (`restoreDefaultBusinessAreas`): botão em `Configurações →
+  Áreas`, mesmo padrão do botão equivalente de categorias — aparece sempre que falta
+  alguma das 8 áreas padrão (comparando por nome, case-insensitive, sem duplicar),
+  não só quando a lista está totalmente vazia. Cobre o caso do seed automático não ter
+  rodado a tempo (ex.: painel acessado antes das regras do Firestore com `businessAreas`
+  serem publicadas — a escrita do seed falha silenciosamente nesse caso, então nada
+  aparece até o usuário restaurar manualmente ou recarregar depois de publicar as regras).
+- **Painel/tabela** (`BusinessAreaTable`, mesma interação da tabela de categorias):
+  popover de `ColorPicker` para recolorir, clique no nome para renomear
+  (`onBlur`/Enter salva, Escape cancela), botão Arquivar/Reativar, e Excluir com
+  `AlertDialog` de confirmação — inclusive para as áreas que vieram do seed, não há
+  distinção entre "padrão" e "cadastrada por você" no schema.
+- **Vínculo por nome, não por id**: `ActionType.area` continua sendo uma string livre
+  (nome da área), então:
+  - **Renomear** (`renameBusinessArea`) propaga o novo nome para todas as categorias que
+    referenciam o nome antigo, num único `writeBatch` (consulta `where('area', '==',
+    nomeAntigo)` nas `actionTypes` do usuário) — sem isso, renomear "descolaria"
+    silenciosamente as categorias já atribuídas.
+  - **Excluir** (`deleteBusinessArea`) nunca apaga nem quebra categorias: as que usam a
+    área excluída voltam para `area: null` ("Sem área") no mesmo `writeBatch` — é
+    reversível, basta reatribuir a área de novo na tabela de Categorias (dado confirmado
+    com o usuário: perder o vínculo é aceitável, perder dado não).
+  - **Arquivar** só tira a área do Select de novas atribuições
+    (`activeBusinessAreas`/`!archived`) — categorias que já a usam continuam mostrando
+    nome e cor normalmente, mesmo padrão de categoria arquivada.
+- **Cor no dashboard**: `areaColor(area, businessAreas)` (`src/lib/areas.ts`) resolve a
+  cor pelo `colorTag` do registro; área sem correspondência (excluída, ou "Sem área") cai
+  no cinza de "excluída". `AreaTotalsChart`/`DailyCompositionChart` recebem essa função
+  via prop `colorFor` (passada por `DashboardContent`, que assina `useBusinessAreas`) em
+  vez de importar a resolução de cor diretamente.
+- **Regras do Firestore**: `isValidBusinessArea` valida `colorTag`/`archived` como
+  opcionais (`isOptionalString`/`isOptionalBool`, nova função) — **republicar** no
+  console (Firestore → Rules → colar → Publish) para o CRUD funcionar em produção.
 
 ### Categorias padrão (seed automático)
 
