@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageHeader } from "@/components/app-shell/page-header";
 import { ActionTypesPanel } from "@/components/action-types/action-types-panel";
 import { PreferencesPanel } from "@/components/settings/preferences-panel";
 
@@ -24,12 +25,10 @@ export function SettingsContent() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Configurações</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Categorias de atividade e preferências de uso.
-        </p>
-      </div>
+      <PageHeader
+        title="Configurações"
+        description="Categorias de atividade e preferências de uso."
+      />
       <Tabs value={tab} onValueChange={(value) => setTab(value as SettingsTab)}>
         <TabsList>
           <TabsTrigger value="categorias" className="px-4">

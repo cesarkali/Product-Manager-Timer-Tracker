@@ -80,13 +80,15 @@ export function WeekHourHeatmap({ entries }: { entries: TimeEntry[] }) {
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <div className="overflow-x-auto">
+          {/* Células de tamanho fixo (estilo gráfico de contribuições do GitHub) —
+              a grade dimensiona pelo conteúdo (w-fit), nunca estica pro card. */}
           <div
-            className="grid min-w-[28rem] gap-[3px]"
-            style={{ gridTemplateColumns: `2.5rem repeat(${hours.length}, minmax(0, 1fr))` }}
+            className="grid w-fit gap-[3px]"
+            style={{ gridTemplateColumns: `2rem repeat(${hours.length}, 1rem)` }}
           >
             {ROW_ORDER.map((day) => (
               <div key={day} className="contents">
-                <span className="flex items-center text-[10px] text-muted-foreground">
+                <span className="flex items-center pr-1 text-[10px] text-muted-foreground">
                   {DAY_LABELS[day]}
                 </span>
                 {hours.map((hour) => {
@@ -97,7 +99,7 @@ export function WeekHourHeatmap({ entries }: { entries: TimeEntry[] }) {
                     <div
                       key={hour}
                       title={`${DAY_LABELS[day]} ${hour}h — ${seconds > 0 ? formatDuration(Math.round(seconds)) : "sem registro"}`}
-                      className="aspect-square min-w-4 rounded-[3px]"
+                      className="h-4 w-4 rounded-[3px]"
                       style={{
                         backgroundColor:
                           seconds > 0
@@ -111,13 +113,16 @@ export function WeekHourHeatmap({ entries }: { entries: TimeEntry[] }) {
             ))}
             <span />
             {hours.map((hour) => (
-              <span key={hour} className="text-center text-[10px] tabular-nums text-muted-foreground">
+              <span
+                key={hour}
+                className="whitespace-nowrap text-[10px] tabular-nums text-muted-foreground"
+              >
                 {hour % 2 === 0 ? `${hour}h` : ""}
               </span>
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-1.5 self-end text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-1.5 pl-8 text-[10px] text-muted-foreground">
           menos
           {[15, 35, 55, 80].map((intensity) => (
             <span

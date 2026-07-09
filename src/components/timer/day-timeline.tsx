@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { buildDayTimeline, type TimelineBlock } from "@/lib/time/day-timeline";
@@ -35,7 +35,11 @@ export function DayTimeline({
   onGapClick: (gap: { start: Date; end: Date }) => void;
 }) {
   // "Agora" congelado por minuto: evita reposicionar blocos a cada segundo.
-  const nowMinute = Math.floor(Date.now() / 60_000);
+  const [nowMinute, setNowMinute] = useState(() => Math.floor(Date.now() / 60_000));
+  useEffect(() => {
+    const interval = setInterval(() => setNowMinute(Math.floor(Date.now() / 60_000)), 30_000);
+    return () => clearInterval(interval);
+  }, []);
   const timeline = useMemo(
     () =>
       buildDayTimeline({

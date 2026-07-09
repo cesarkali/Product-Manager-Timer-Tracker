@@ -11,12 +11,15 @@ function ActionTypeCard({
   isActive,
   disabled,
   shortcutKey,
+  animationDelayMs,
   onSelect,
 }: {
   actionType: ActionType;
   isActive: boolean;
   disabled?: boolean;
   shortcutKey?: number;
+  /** Entrada escalonada do grid (stagger). */
+  animationDelayMs?: number;
   onSelect: (actionType: ActionType) => void;
 }) {
   const color = categoryColor(actionType.colorTag);
@@ -28,11 +31,13 @@ function ActionTypeCard({
       onClick={() => onSelect(actionType)}
       className={cn(
         "group relative flex min-h-32 flex-col items-center justify-center gap-3 overflow-hidden rounded-xl border bg-card p-4 text-center shadow-sm transition-all",
-        "hover:-translate-y-0.5 hover:shadow-md disabled:pointer-events-none disabled:opacity-50",
+        "animate-in fade-in slide-in-from-bottom-2 fill-mode-backwards duration-300",
+        "hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
         isActive && "ring-2 ring-offset-2 ring-offset-background"
       )}
       style={{
         backgroundColor: `color-mix(in oklch, ${color} 8%, var(--card))`,
+        animationDelay: `${animationDelayMs ?? 0}ms`,
         ...(isActive ? ({ ["--tw-ring-color" as string]: color }) : undefined),
       }}
     >
@@ -94,13 +99,14 @@ export function ActionTypeGrid({
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {actionTypes.map((actionType) => (
+      {actionTypes.map((actionType, index) => (
         <ActionTypeCard
           key={actionType.id}
           actionType={actionType}
           isActive={actionType.id === activeActionTypeId}
           disabled={disabled}
           shortcutKey={actionType.shortcutKey ?? undefined}
+          animationDelayMs={Math.min(index * 40, 400)}
           onSelect={onSelect}
         />
       ))}

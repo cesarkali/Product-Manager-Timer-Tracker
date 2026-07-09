@@ -17,6 +17,7 @@ import { formatDayLabel, formatDateTimeLabel, toLocalIsoDate } from "@/lib/time/
 import { NO_AREA_LABEL } from "@/lib/areas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/app-shell/page-header";
 import { DateRangeFilter } from "@/components/dashboard/date-range-filter";
 import { StatTiles, type StatTilesPrevious } from "@/components/dashboard/stat-tiles";
 import { CategoryTotalsChart, type CategoryTotal } from "@/components/dashboard/category-totals-chart";
@@ -25,6 +26,7 @@ import { DailyTotalsChart, type DailyTotal } from "@/components/dashboard/daily-
 import { AreaTotalsChart, type AreaTotal } from "@/components/dashboard/area-totals-chart";
 import { TaskTimeTable, type TaskAggregate } from "@/components/dashboard/task-time-table";
 import { WeekHourHeatmap } from "@/components/dashboard/week-hour-heatmap";
+import { WorkRhythmCard } from "@/components/dashboard/work-rhythm-card";
 import { ExecutiveSummary } from "@/components/dashboard/executive-summary";
 import {
   CategoryFrequencyTable,
@@ -95,6 +97,10 @@ export function DashboardContent() {
 
   const { actionTypes, actionTypesById } = useActionTypes();
   const { entries, deleteEntry, updateEntry, updateEntryFull } = useTimeEntries(range);
+  // Segunda assinatura, do período imediatamente anterior — base dos deltas
+  // dos KPIs. Mesmo volume da principal; custo desprezível no uso atual.
+  const prevRange = useMemo(() => previousRange(range), [range]);
+  const { entries: previousEntries } = useTimeEntries(prevRange);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
 
   function setPreset(next: Exclude<RangePreset, "custom">) {
@@ -113,15 +119,65 @@ export function DashboardContent() {
     router.replace(`/dashboard?${params.toString()}`);
   }
 
-  const totalSeconds = entries.reduce((sum, e) => sum + e.durationSeconds, 0);
-  const taskCreatedPercent =
-    entries.length === 0 ? 0 : Math.round((entries.filter((e) => e.taskCreated).length / entries.length) * 100);
+  const kpis = kpisOf(entries);
+  const previousKpis: StatTilesPrevious | null =
+    previousEntries.length === 0 ? null : kpisOf(previousEntries);
 
-  const totalStoryPoints = entries.reduce(
-    (sum, e) => sum + (e.tasks ?? []).reduce((s, t) => s + t.storyPoints, 0),
-    0
+  const areaTotals: AreaTotal[] = useMemo(() => {
+    const totals = new Map<string, number>();
+    let totalSeconds = 0;
+    for (const entry of entries) {
+      const area = actionTypesById.get(entry.actionTypeId)?.area ?? NO_AREA_LABEL;
+      totals.set(area, (totals.get(area) ?? 0) + entry.durationSeconds);
+      totalSeconds += entry.durationSeconds;
+    }
+    return Array.from(totals.entries())
+      .map(([area, seconds]) => ({
+        area,
+        totalSeconds: seconds,
+        sharePercent: totalSeconds === 0 ? 0 : Math.round((seconds / totalSeconds) * 100),
+      }))
+      .sort((a, b) => b.totalSeconds - a.totalSeconds);
+  }, [entries, actionTypesById]);
+
+  // "Sem área" não conta como área principal — é ausência de classificação.
+  const topAreaEntry = areaTotals.find((a) => a.area !== NO_AREA_LABEL && a.totalSeconds > 0);
+  const topArea = topAreaEntry
+    ? { name: topAreaEntry.area, sharePercent: topAreaEntry.sharePercent }
+    : null;
+
+  const taskAggregates: TaskAggregate[] = useMemo(() => {
+    const totals = new Map<string, TaskAggregate>();
+    for (const entry of entries) {
+      for (const task of entry.tasks ?? []) {
+        const reference = task.reference.trim();
+        if (!reference) continue;
+        const key = `${task.type}:${reference.toLowerCase()}`;
+        const existing = totals.get(key);
+        if (existing) {
+          // Atribuição integral: o tempo do registro conta inteiro para cada
+          // task vinculada (nota de rodapé na tabela explica).
+          existing.totalSeconds += entry.durationSeconds;
+          existing.sessions += 1;
+          existing.storyPoints = Math.max(existing.storyPoints, task.storyPoints);
+        } else {
+          totals.set(key, {
+            reference,
+            type: task.type,
+            totalSeconds: entry.durationSeconds,
+            sessions: 1,
+            storyPoints: task.storyPoints,
+          });
+        }
+      }
+    }
+    return Array.from(totals.values()).sort((a, b) => b.totalSeconds - a.totalSeconds);
+  }, [entries]);
+
+  const activeDays = useMemo(
+    () => new Set(entries.map((e) => toLocalIsoDate(e.startTime.toDate()))).size,
+    [entries]
   );
-  const secondsPerPoint = totalStoryPoints === 0 ? null : Math.round(totalSeconds / totalStoryPoints);
 
   const categoryPoints: CategoryPoints[] = useMemo(() => {
     const totals = new Map<string, CategoryPoints>();
@@ -206,38 +262,47 @@ export function DashboardContent() {
       .reverse();
   }, [entries]);
 
+  const PRESET_LABELS: Partial<Record<RangePreset, string>> = {
+    today: "Hoje",
+    "7d": "Últimos 7 dias",
+    "30d": "Últimos 30 dias",
+    month: "Este mês",
+    lastMonth: "Mês passado",
+  };
   const periodLabel =
-    preset === "today"
-      ? "Hoje"
-      : preset === "7d"
-        ? "Últimos 7 dias"
-        : preset === "30d"
-          ? "Últimos 30 dias"
-          : activeCustomRange
-            ? `${formatDayLabel(activeCustomRange.start)} a ${formatDayLabel(activeCustomRange.end)}`
-            : "Período customizado";
+    PRESET_LABELS[preset] ??
+    (activeCustomRange
+      ? `${formatDayLabel(activeCustomRange.start)} a ${formatDayLabel(activeCustomRange.end)}`
+      : "Período customizado");
+
+  const topCategory =
+    categoryTotals.length > 0 && kpis.totalSeconds > 0
+      ? {
+          name: categoryTotals[0].name,
+          sharePercent: Math.round((categoryTotals[0].totalSeconds / kpis.totalSeconds) * 100),
+        }
+      : null;
 
   return (
     <div className="print-compact flex flex-col gap-8 print:gap-5">
-      <div className="flex flex-wrap items-start justify-between gap-4 print:hidden">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Evidência de onde o seu tempo foi gasto no período selecionado.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <DateRangeFilter
-            preset={preset}
-            customRange={activeCustomRange}
-            onChange={setPreset}
-            onCustomRangeChange={setCustomRange}
-          />
-          <Button size="sm" variant="outline" onClick={() => window.print()}>
-            Exportar / imprimir
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        className="print:hidden"
+        title="Dashboard"
+        description="Evidência de onde o seu tempo foi gasto no período selecionado."
+        actions={
+          <>
+            <DateRangeFilter
+              preset={preset}
+              customRange={activeCustomRange}
+              onChange={setPreset}
+              onCustomRangeChange={setCustomRange}
+            />
+            <Button size="sm" variant="outline" onClick={() => window.print()}>
+              Exportar / imprimir
+            </Button>
+          </>
+        }
+      />
 
       <div className="hidden print:block">
         <div className="flex items-baseline justify-between border-b pb-3">
@@ -247,20 +312,57 @@ export function DashboardContent() {
         <p className="mt-2 text-xs text-muted-foreground">
           Gerado em {formatDateTimeLabel(new Date())}
         </p>
+        <div className="mt-3">
+          <ExecutiveSummary
+            periodLabel={periodLabel}
+            totalSeconds={kpis.totalSeconds}
+            previousTotalSeconds={previousKpis?.totalSeconds ?? null}
+            entryCount={kpis.entryCount}
+            activeDays={activeDays}
+            topCategory={topCategory}
+            topArea={topArea}
+            distinctTaskCount={taskAggregates.length}
+            totalStoryPoints={kpis.totalStoryPoints}
+          />
+        </div>
       </div>
 
       <StatTiles
-        totalSeconds={totalSeconds}
-        entryCount={entries.length}
-        taskCreatedPercent={taskCreatedPercent}
-        totalStoryPoints={totalStoryPoints}
-        secondsPerPoint={secondsPerPoint}
+        totalSeconds={kpis.totalSeconds}
+        entryCount={kpis.entryCount}
+        taskCreatedPercent={kpis.taskCreatedPercent}
+        totalStoryPoints={kpis.totalStoryPoints}
+        secondsPerPoint={kpis.secondsPerPoint}
+        topArea={topArea}
+        previous={previousKpis}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 print:grid-cols-1 print:gap-4">
         <CategoryTotalsChart data={categoryTotals} />
         <DailyTotalsChart data={dailyTotals} />
         <CategoryPointsChart data={categoryPoints} />
+        <AreaTotalsChart data={areaTotals} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 print:hidden">
+        <WeekHourHeatmap entries={entries} />
+        <WorkRhythmCard entries={entries} />
+      </div>
+
+      <div className="flex flex-col gap-3 break-inside-avoid">
+        <div className="print:hidden">
+          <h2 className="text-lg font-semibold">Tempo por task</h2>
+          <p className="text-sm text-muted-foreground">
+            Cada task Jira/Movidesk trabalhada no período, com o tempo somado e o número de
+            sessões — evidência direta do que foi entregue.
+          </p>
+        </div>
+        <h2 className="hidden text-base font-semibold print:block">Tempo por task</h2>
+        <Card className="print:shadow-none">
+          <CardContent>
+            <TaskTimeTable data={taskAggregates} />
+          </CardContent>
+        </Card>
       </div>
 
       <div className="flex flex-col gap-3 break-inside-avoid">

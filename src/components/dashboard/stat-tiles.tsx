@@ -32,13 +32,16 @@ function deltaPercentOf(current: number, previous: number | null | undefined): n
   return Math.round(((current - previous) / previous) * 100);
 }
 
-function StatTile({ stat }: { stat: StatDefinition }) {
+function StatTile({ stat, animationDelayMs = 0 }: { stat: StatDefinition; animationDelayMs?: number }) {
   const animated = useCountUp(stat.numeric ?? 0);
   const display = stat.numeric == null ? (stat.fallback ?? "—") : stat.format(animated);
   const delta = stat.deltaPercent;
 
   return (
-    <Card className="gap-2 py-6 print:gap-1 print:border-border print:py-3 print:shadow-none">
+    <Card
+      className="animate-in fade-in slide-in-from-bottom-2 fill-mode-backwards gap-2 py-6 duration-300 print:gap-1 print:border-border print:py-3 print:shadow-none"
+      style={{ animationDelay: `${animationDelayMs}ms` }}
+    >
       <CardContent className="print:px-3">
         <p className="text-sm text-muted-foreground print:text-xs">{stat.label}</p>
         <p className="mt-2 text-3xl font-semibold tracking-tight tabular-nums print:mt-1 print:text-xl">
@@ -133,10 +136,13 @@ export function StatTiles({
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6 print:grid-cols-6 print:gap-3">
-      {stats.map((stat) => (
-        <StatTile key={stat.label} stat={stat} />
+      {stats.map((stat, index) => (
+        <StatTile key={stat.label} stat={stat} animationDelayMs={index * 40} />
       ))}
-      <Card className="gap-2 py-6 print:gap-1 print:border-border print:py-3 print:shadow-none">
+      <Card
+        className="animate-in fade-in slide-in-from-bottom-2 fill-mode-backwards gap-2 py-6 duration-300 print:gap-1 print:border-border print:py-3 print:shadow-none"
+        style={{ animationDelay: `${stats.length * 40}ms` }}
+      >
         <CardContent className="print:px-3">
           <p className="text-sm text-muted-foreground print:text-xs">Área principal</p>
           <p

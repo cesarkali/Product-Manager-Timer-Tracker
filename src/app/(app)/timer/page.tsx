@@ -5,6 +5,7 @@ import { useActionTypes } from "@/hooks/use-action-types";
 import { useActiveTimer } from "@/hooks/use-active-timer";
 import { useTimeEntries } from "@/hooks/use-time-entries";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
+import { PageHeader } from "@/components/app-shell/page-header";
 import { TimerCard } from "@/components/timer/timer-card";
 import { ActionTypeGrid } from "@/components/timer/action-type-grid";
 import { DaySummary } from "@/components/timer/day-summary";
@@ -67,13 +68,13 @@ export default function TimerPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Hoje</h1>
-          <p className="text-sm text-muted-foreground first-letter:uppercase">{todayLabel}</p>
-        </div>
-        <DaySummary entries={todayEntries} activeElapsedSeconds={activeTimer ? elapsedSeconds : 0} />
-      </div>
+      <PageHeader
+        title="Hoje"
+        description={<span className="inline-block first-letter:uppercase">{todayLabel}</span>}
+        actions={
+          <DaySummary entries={todayEntries} activeElapsedSeconds={activeTimer ? elapsedSeconds : 0} />
+        }
+      />
 
       <TimerCard
         actionType={activeActionType}

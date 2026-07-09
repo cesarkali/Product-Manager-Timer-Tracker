@@ -90,18 +90,27 @@ git config user.email "juliocaliberda@outlook.com"
 
 ```
 users/{uid}                              perfil — criado no primeiro login (lazy upsert), não via signup
-                                          { email, name, role: 'pm', createdAt, hasSeededActionTypes? }
-users/{uid}/actionTypes/{id}             { name, colorTag, icon, archived, order, createdAt }
+                                          { email, name, role: 'pm', createdAt, hasSeededActionTypes?,
+                                            sidebarCollapsed?, reminderEnabled?, reminderMinutes?,
+                                            workStart?, workEnd?, workDays? }
+                                          os campos de lembrete/expediente são opcionais, com
+                                          defaults aplicados na leitura (use-user-preferences.ts)
+users/{uid}/actionTypes/{id}             { name, colorTag, icon, archived, order, shortcutKey?,
+                                            area?, createdAt }
+                                          area é opcional (null/ausente = "Sem área") — agrupa
+                                          categorias no gráfico "Tempo por área" do dashboard
 users/{uid}/timeEntries/{id}             { actionTypeId, actionTypeName, startTime, endTime,
                                             durationSeconds, pausedSeconds, taskCreated,
-                                            tasks: LinkedTask[], notes, source: 'timer'|'manual',
-                                            createdAt, updatedAt }
+                                            tasks: LinkedTask[], notes, description?,
+                                            source: 'timer'|'manual', createdAt, updatedAt }
                                           pausedSeconds é opcional (0/ausente em registros manuais
-                                          e em registros antigos) — nunca aparece na UI, só existe
-                                          para que editar um registro pausado recalcule
-                                          `durationSeconds` corretamente (ver §Lógica do timer)
+                                          e em registros antigos) — só existe para que editar um
+                                          registro pausado recalcule `durationSeconds`
+                                          corretamente (ver §Lógica do timer). description é a
+                                          descrição rápida (≤140 chars), ausente em registros
+                                          antigos
 users/{uid}/activeTimer/current          { actionTypeId, startTime, tasks: LinkedTask[], comments,
-                                            pausedAt, accumulatedPausedSeconds }
+                                            description?, pausedAt, accumulatedPausedSeconds }
                                           documento SÓ existe quando há cronômetro rodando
                                           (parar = deletar o doc). pausedAt/
                                           accumulatedPausedSeconds são opcionais (ausentes em
@@ -171,43 +180,53 @@ repck/
     │   ├── page.tsx                       redirect('/timer')
     │   ├── (auth)/login/page.tsx          formulário de login, cabeçalho "PMTT"
     │   └── (app)/
-    │       ├── layout.tsx                 AuthGate + shell (Sidebar/MobileNav "PMTT") com indicador de timer ativo + transição entre rotas
-    │       ├── timer/page.tsx             grid de categorias (ordenadas por ActionType.order) + card do cronômetro
+    │       ├── layout.tsx                 AuthGate + shell (Sidebar/MobileNav "PMTT") + TimerReminder + transição entre rotas
+    │       ├── timer/page.tsx             "página do dia" (rótulo "Hoje" na nav): resumo do dia + cronômetro + linha do dia com lacunas clicáveis + grid de categorias
     │       ├── entries/page.tsx           lançamento manual + tabela de registros + modal de edição
     │       ├── dashboard/page.tsx         shell + <Suspense><DashboardContent /></Suspense>
-    │       └── settings/action-types/page.tsx   CRUD de categorias + botão de restaurar padrão
+    │       ├── settings/page.tsx          shell + <Suspense><SettingsContent /></Suspense> (tabs Categorias | Preferências via ?tab=)
+    │       └── settings/action-types/page.tsx   redirect("/settings?tab=categorias") — preserva bookmarks antigos
     ├── components/
-    │   ├── ui/                            primitivos shadcn (base-ui/react), inclui textarea.tsx
+    │   ├── ui/                            primitivos shadcn (base-ui/react), inclui textarea.tsx e switch.tsx
     │   ├── auth/{login-form,auth-gate}.tsx
+    │   ├── app-shell/{sidebar,sidebar-nav-links,mobile-nav,page-transition,page-header,timer-reminder}.tsx
     │   ├── shared/
     │   │   ├── custom-day-picker.tsx      grade de calendário p/ seleção de dia único (sem lib pronta)
     │   │   ├── time-of-day-picker.tsx     popover com 3 colunas roláveis (hora/min/seg), sem lib pronta
     │   │   └── linked-tasks-editor.tsx    lista de LinkedTask com botão "+" e Select de tipo/story points
-    │   ├── timer/{timer-card,action-type-grid,active-timer-indicator}.tsx
+    │   ├── timer/{timer-card,action-type-grid,active-timer-indicator,quick-description-input,start-time-adjuster,day-summary,day-timeline}.tsx
     │   ├── entries/
-    │   │   ├── manual-entry-form.tsx      usa EntryFormFields
-    │   │   ├── entry-form-fields.tsx      campos compartilhados entre criação e edição (RHF), grid responsivo por container query (@container)
+    │   │   ├── manual-entry-form.tsx      usa EntryFormFields; aceita defaultValues/onSuccess (pré-preenchimento de lacuna)
+    │   │   ├── manual-entry-dialog.tsx    lançamento manual em modal (usado pela linha do dia)
+    │   │   ├── entry-form-fields.tsx      campos compartilhados entre criação e edição (RHF), grid responsivo por container query (@container); inclui campo Descrição
     │   │   ├── edit-entry-dialog.tsx      modal de edição completa de um registro existente (sm:max-w-4xl lg:max-w-5xl)
-    │   │   └── entries-table.tsx          tabela com coluna de comentário (tooltip + modal) e ação Editar
+    │   │   └── entries-table.tsx          tabela com coluna Descrição (description em destaque + notes com tooltip) e ação Editar
     │   ├── action-types/
+    │   │   ├── action-types-panel.tsx     corpo da aba Categorias (extraído da antiga página)
     │   │   ├── action-type-form.tsx       criação de categoria (nome + ícone)
-    │   │   ├── action-type-table.tsx      tabela com drag-and-drop de ordenação, troca de ícone/cor, renomear, arquivar, excluir
+    │   │   ├── action-type-table.tsx      drag-and-drop de ordenação, ícone/cor, renomear, área, atalho, arquivar, excluir
     │   │   ├── icon-picker.tsx            grade de ícones disponíveis
     │   │   └── color-picker.tsx           grade das 8 cores da paleta fixa
-    │   └── dashboard/{dashboard-content,stat-tiles,category-totals-chart,category-points-chart,daily-totals-chart,category-frequency-table,date-range-filter,custom-calendar}.tsx
+    │   ├── settings/{settings-content,preferences-panel}.tsx   tabs de /settings + painel de lembrete/expediente
+    │   └── dashboard/{dashboard-content,stat-tiles,category-totals-chart,category-points-chart,daily-totals-chart,area-totals-chart,task-time-table,week-hour-heatmap,executive-summary,category-frequency-table,date-range-filter,custom-calendar}.tsx
     ├── hooks/
     │   ├── use-auth.tsx                   contexto sobre onAuthStateChanged, upsert de perfil só na troca real de uid
-    │   ├── use-action-types.ts            onSnapshot da coleção de categorias + seed idempotente + reorder/cor/ícone
-    │   ├── use-active-timer.ts            onSnapshot do activeTimer + tick de 1s + start/stop (taskCreated automático se houver task Jira)
-    │   └── use-time-entries.ts            onSnapshot com query de intervalo de datas + updateEntryFull
+    │   ├── use-action-types.ts            onSnapshot da coleção de categorias + seed idempotente + reorder/cor/ícone/área
+    │   ├── use-active-timer.ts            onSnapshot do activeTimer + tick de 1s + start/stop/pause/resume + descrição + adjustStartTime
+    │   ├── use-time-entries.ts            onSnapshot com query de intervalo de datas + updateEntryFull (com description)
+    │   ├── use-user-preferences.ts        lembrete/expediente em users/{uid} (updateDoc com patch, preserva campos existentes)
+    │   ├── use-timer-reminder.ts          lógica do lembrete "cadê o cronômetro?" (toast + Notification API)
+    │   └── use-count-up.ts               animação de contagem dos KPIs (rAF, respeita prefers-reduced-motion)
     └── lib/
         ├── firebase/client.ts             init do Firebase (guard contra re-init do HMR)
-        ├── time/{format,ranges}.ts        formatação (sempre com ano) e presets de período
+        ├── time/{format,ranges,day-timeline}.ts   formatação (sempre com ano), presets de período (+lastMonth, previousRange) e cálculo da linha do dia
         ├── default-action-types.ts        lista das 13 categorias semeadas automaticamente
+        ├── description-suggestions.ts     últimas descrições distintas por categoria (chips do cronômetro)
+        ├── areas.ts                       AREA_OPTIONS (8 áreas fixas) + areaColor
         ├── icons.tsx                      registro de ícones (lucide-react) usados pelas categorias
         ├── palette.ts                     paleta fixa de 8 cores (claro/escuro)
-        ├── types.ts                       ActionType (com order), LinkedTask, TimeEntry, ActiveTimer, UserProfile, STORY_POINT_OPTIONS
-        └── validation.ts                  schemas zod dos formulários (inclui linkedTaskSchema, manualEntrySchema)
+        ├── types.ts                       ActionType (order/área), LinkedTask, TimeEntry (description), ActiveTimer, UserProfile (prefs), STORY_POINT_OPTIONS, DESCRIPTION_MAX_LENGTH
+        └── validation.ts                  schemas zod dos formulários (inclui linkedTaskSchema, manualEntrySchema com description)
 ```
 
 Não há `middleware.ts` — ver justificativa abaixo.
@@ -268,7 +287,8 @@ service cloud.firestore {
         && data.icon is string
         && data.archived is bool
         && data.order is number
-        && isOptionalNumber(data, 'shortcutKey');
+        && isOptionalNumber(data, 'shortcutKey')
+        && isOptionalString(data, 'area');
     }
 
     function isValidTasksField(data) {
@@ -280,6 +300,7 @@ service cloud.firestore {
         && data.actionTypeId is string
         && isValidTasksField(data)
         && isOptionalString(data, 'comments')
+        && isOptionalString(data, 'description')
         && isOptionalTimestamp(data, 'pausedAt')
         && isOptionalNumber(data, 'accumulatedPausedSeconds');
     }
@@ -293,7 +314,8 @@ service cloud.firestore {
         && data.taskCreated is bool
         && data.source in ['timer', 'manual']
         && isValidTasksField(data)
-        && isOptionalNumber(data, 'pausedSeconds');
+        && isOptionalNumber(data, 'pausedSeconds')
+        && isOptionalString(data, 'description');
     }
 
     match /users/{uid} {
@@ -344,13 +366,24 @@ Testar no "Rules playground" do console (Firestore → Rules) antes de confiar e
 > 5. Cronômetro ativo ganhou os campos opcionais `pausedAt` e
 >    `accumulatedPausedSeconds`, para suportar pausar/retomar sem perder o registro em
 >    andamento.
-> 6. **Mais recente**: registros de tempo ganharam o campo opcional `pausedSeconds`
+> 6. Registros de tempo ganharam o campo opcional `pausedSeconds`
 >    (tempo pausado descontado de `endTime - startTime`), gravado ao fechar um registro
 >    vindo do cronômetro e usado para não recalcular a duração errada ao editar um
->    registro que teve pausas (ver §Lógica do timer). Se você vir `Missing or
->    insufficient permissions` ao criar, editar, reordenar ou trocar cor/ícone de uma
->    categoria, ao pausar/retomar o cronômetro, ou ao editar um registro,
->    confira se esta versão das regras já está publicada no console.
+>    registro que teve pausas (ver §Lógica do timer).
+> 7. **Mais recente**: categorias ganharam o campo opcional `area` (área de negócio,
+>    para o gráfico "Tempo por área" e o KPI "Área principal" do dashboard); cronômetro
+>    ativo e registros de tempo ganharam o campo opcional `description` (descrição
+>    rápida "o que você está fazendo?", ≤140 caracteres, distinta dos comentários
+>    longos). Todos validados por `isOptionalString` — docs antigos sem os campos
+>    continuam válidos. Se você vir `Missing or insufficient permissions` em qualquer
+>    operação, confira se esta versão está publicada no console. Nota de
+>    compatibilidade: como as regras usam `hasAll` (sem `hasOnly`), campos extras já
+>    eram aceitos antes — publicar esta versão serve para validar o *tipo* dos campos
+>    novos; app novo com regras antigas não quebra, nem o contrário.
+>
+> As preferências de lembrete/expediente (`reminderEnabled`, `reminderMinutes`,
+> `workStart`, `workEnd`, `workDays`) vivem no próprio doc `users/{uid}`, cujo update
+> já é livre para o dono — **não** exigem mudança de regras.
 
 ### Variáveis de ambiente
 
@@ -464,10 +497,43 @@ escolhida manualmente por categoria via `ColorPicker`:
   categoria — mede complexidade/esforço de análise, não só tempo.
 - **Linha de KPIs**: cards com tempo total, nº de registros, % com task criada, total de
   story points e segundos por ponto (relação tempo × complexidade).
+- **Tempo por área** (`AreaTotalsChart`): barras horizontais agrupando categorias pela
+  `area` opcional ("Sem área" agrupa as não classificadas e as excluídas), com % de
+  participação — o número mais direto para mostrar à gestão "X% do meu tempo vai para
+  destravar o suporte". Cor estável por área (`areaColor`, mesma paleta).
+- **Comparação com período anterior**: segunda assinatura (`previousRange`, mesma
+  duração imediatamente anterior) alimenta deltas `↑/↓ ±X%` em cada KPI. Verde para
+  aumento em tempo/registros/pontos (mais evidência = bom); neutro para "% task criada"
+  e "tempo por ponto" (ambíguos); "—" sem base de comparação. Números animam com
+  `useCountUp` (rAF, respeita `prefers-reduced-motion`).
+- **KPI "Área principal"**: 6º tile com a área de maior tempo e sua participação —
+  "Sem área" não conta como área principal (é ausência de classificação).
+- **Tempo por task** (`TaskTimeTable`): agrega `entry.tasks` por referência normalizada
+  (trim + case-insensitive, separada por tipo Jira/Movidesk) somando o tempo integral de
+  cada registro que vincula a task (atribuição integral — registros com várias tasks
+  contam o tempo inteiro para cada uma; nota de rodapé explica), nº de sessões e story
+  points (máximo entre ocorrências, para não somar a mesma task 2x). Entra no PDF.
+- **Quando você trabalha** (`WeekHourHeatmap`): mapa de calor semana × hora em grid CSS
+  próprio (Recharts não tem heatmap decente) — matriz 7×24 distribuindo cada registro
+  pelas fronteiras de hora que atravessa (intervalo bruto, sem descontar pausas: é
+  visualização de padrão, não contabilidade). Tom único azul via `color-mix` com piso de
+  12% (valores pequenos continuam visíveis), célula vazia distinta de valor baixo,
+  tooltip via `title` nativo (o primitivo Tooltip em ~100 células seria pesado), colunas
+  limitadas à faixa com dados, células de tamanho fixo 16px (estilo gráfico de
+  contribuições do GitHub — a grade nunca estica pro card). Fora da impressão.
+- **Ritmo de trabalho** (`WorkRhythmCard`, lado a lado com o heatmap em `lg:grid-cols-2`):
+  dia da semana mais produtivo, horário de pico, média por dia ativo, "dia típico"
+  (média do primeiro início e do último fim por dia) e barra de distribuição
+  manhã (<12h) / tarde (12–18h) / noite (≥18h) — derivados dos mesmos registros pelo
+  mesmo split de fronteiras de hora do heatmap. Fora da impressão.
+- **Resumo executivo** (`ExecutiveSummary`, só no PDF): 2-4 frases de narrativa
+  automática (total, delta vs anterior, top categoria/área, tasks distintas, pontos) —
+  frases condicionais, sem dado = sem frase. Aparece logo abaixo do cabeçalho impresso.
 - **Frequência por dia/categoria**: tabela de quantas vezes cada categoria foi acionada no
   mesmo dia — evidencia rotinas que se repetem.
-- **Filtros de período** (hoje/7d/30d/custom) no topo, afetando KPIs + gráficos + tabela
-  ao mesmo tempo, todos derivados do mesmo array já carregado.
+- **Filtros de período** unificados entre dashboard e registros: Hoje · 7 dias · Este
+  mês · Mês passado · Personalizado ("30d" saiu dos botões mas segue aceito na URL do
+  dashboard por back-compat), afetando KPIs + gráficos + tabelas ao mesmo tempo.
 - **Tabela de registros** (mesma usada em `/entries`) serve de drill-down e também de
   alternativa acessível aos gráficos; coluna de comentário com preview truncado (tooltip
   limitado a 300 caracteres, com largura máxima real — ver §Bugs corrigidos #9) e
@@ -480,10 +546,94 @@ escolhida manualmente por categoria via `ColorPicker`:
   format.ts`) incluem `year: "numeric"` — antes só mostravam dia/mês, o que ficaria
   ambíguo na virada do ano.
 
+### Página do dia (/timer, rótulo "Hoje" na navegação)
+
+A tela do cronômetro virou a "home" prática do dia (a URL `/timer` foi mantida —
+renomear rota não valia o risco):
+
+- **Resumo do dia** (`DaySummary`): tempo total de hoje (registros + cronômetro em
+  andamento) e nº de registros, no cabeçalho da página.
+- **Linha do dia** (`DayTimeline` + `buildDayTimeline` em `src/lib/time/day-timeline.ts`,
+  função pura): faixa horizontal com blocos coloridos por categoria, o bloco do
+  cronômetro em andamento pulsando, e **lacunas tracejadas clicáveis** — clicar abre o
+  lançamento manual em modal (`ManualEntryDialog`) já pré-preenchido com início/fim da
+  lacuna. Lacunas só dentro do expediente configurado (Preferências), mínimo de 5 min
+  (`MIN_GAP_MS`), nunca no futuro. Eixo arredondado para horas cheias, cobrindo
+  expediente + registros fora dele. Limitação documentada: registro que começou ontem e
+  virou a noite não aparece (a query filtra por `startTime` do dia).
+- **Fonte de dados única**: a página assina **7 dias** de registros — alimenta a
+  timeline (filtro de hoje no cliente) e as sugestões de descrição, sem query extra.
+  Range memoizado no mount (virar meia-noite pede F5, aceitável).
+
+### Descrição rápida ("o que você está fazendo?")
+
+Campo curto `description` (≤140 chars, `DESCRIPTION_MAX_LENGTH`), separado dos
+comentários longos (`notes`, 1000) — resolve a dor de depender do textarea para dizer o
+que se está fazendo:
+
+- **No cronômetro** (`QuickDescriptionInput`): input proeminente logo abaixo do relógio,
+  persistido no blur/Enter (mesmo padrão do textarea de comentários — nunca a cada
+  tecla). Abaixo, **chips com as últimas 5 descrições distintas da mesma categoria**
+  (`recentDescriptions`, derivadas client-side dos 7 dias já assinados — sem coleção
+  nova); 1 clique preenche e salva. Ao parar/trocar de categoria, o registro fechado
+  herda a descrição do `activeTimer`.
+- **Nos formulários** (lançamento manual e edição): campo "Descrição (opcional)" acima
+  das tasks vinculadas, com contador, validado pelo `manualEntrySchema`.
+- **Na tabela de registros**: a coluna "Comentário" virou "Descrição" — `description`
+  como linha principal em destaque, `notes` como linha secundária truncada (tooltip e
+  clique-para-editar mantidos). Registros antigos (sem `description`) mostram só notes.
+
+### Ajuste retroativo do início do cronômetro
+
+Para quem esqueceu de ligar na hora: "Iniciado às HH:mm:ss · ajustar" no card do
+cronômetro (`StartTimeAdjuster`) abre popover com chips −5/−10/−15/−30 min e
+`TimeOfDayPicker` para horário exato. `adjustStartTime` (use-active-timer.ts) recusa
+início no futuro e, se pausado, início depois de `pausedAt` (retorna `false` → toast de
+erro); grava só `startTime` via `updateDoc` — `accumulatedPausedSeconds` fica intacto e
+o relógio se recalcula sozinho pelo `onSnapshot`.
+
+### Lembrete "cadê o cronômetro?" e preferências
+
+- **Preferências** (`useUserPreferences`, aba Preferências de `/settings`): switch de
+  lembrete (pede permissão de notificação **só ao ativar**; se negada, avisa que os
+  alertas ficam só no app), intervalo (10–60 min), expediente (início/fim "HH:mm" via
+  `TimeOfDayPicker`) e dias úteis (toggles D S T Q Q S S). Gravadas em `users/{uid}`
+  **sempre via `updateDoc` com patch** — nunca `setDoc` — para preservar
+  `hasSeededActionTypes`/`sidebarCollapsed`. O expediente também define a faixa de
+  lacunas da linha do dia.
+- **Disparo** (`useTimerReminder`, montado no layout via `TimerReminder` para valer em
+  qualquer rota): checagem a cada 60s — dentro do expediente, sem timer rodando (pausado
+  conta como rodando) há mais que o intervalo configurado → `toast.warning` com ação
+  "Ir para Hoje" e, se a permissão foi concedida **e a aba está em segundo plano**,
+  `new Notification` que foca a janela ao clicar. Throttle entre avisos persistido em
+  `sessionStorage`. Ociosidade medida desde a transição timer→null; no mount sem timer,
+  uma única leitura `orderBy startTime desc limit 1` usa o `endTime` do último registro.
+- **Limite conhecido e comunicado na UI**: com a aba fechada nenhum aviso é enviado
+  (sem service worker/Web Push por ora — candidato a evolução futura).
+
+### Navegação e animações
+
+- Navegação final: **Hoje** (`/timer`) · **Registros** · **Dashboard** ·
+  **Configurações** (`/settings`, tabs Categorias | Preferências sincronizadas com
+  `?tab=`; a rota antiga `/settings/action-types` redireciona). Cabeçalho padronizado
+  via `PageHeader` nas quatro rotas.
+- Abordagem de animação **CSS-first, sem lib JS** (`tw-animate-css` já presente +
+  keyframes próprios): entrada escalonada (stagger de 40ms, teto 400ms) nos cards de
+  categoria e KPIs; `active:scale-[0.98]` nos cards; glow pulsante no card do cronômetro
+  rodando (`timer-glow`, anima **opacity** do gradiente já existente — nunca box-shadow,
+  que repinta) e no bloco ativo da timeline (`timer-glow-block`); count-up nos números
+  (`useCountUp`). Duas salvaguardas obrigatórias em `globals.css`: `@media print` zera
+  toda animação/transição (sem isso, `fill-mode-backwards` + delay imprime cards
+  invisíveis) e `@media (prefers-reduced-motion: reduce)` idem para acessibilidade.
+
 ### Categorias: ícone, cor, ordem e drag-and-drop
 
 - Cada categoria tem `icon` (chave de `ICON_REGISTRY`, `src/lib/icons.tsx`), `colorTag`
-  (índice string na paleta de 8 cores) e `order` (posição de exibição).
+  (índice string na paleta de 8 cores), `order` (posição de exibição), `shortcutKey?`
+  (tecla 1-9) e `area?` (área de negócio).
+- **Área**: Select por linha na tabela ("Sem área" + as 8 opções fixas de
+  `AREA_OPTIONS` em `src/lib/areas.ts` — lista fixa de propósito, "Outro" é a válvula
+  de escape). Alimenta o gráfico "Tempo por área" e o KPI "Área principal".
 - **Troca de ícone**: popover com `IconPicker` (grade de ícones), disparado ao clicar no
   ícone da categoria na tabela.
 - **Troca de cor**: popover com `ColorPicker` (grade das 8 cores fixas), disparado ao
@@ -496,7 +646,7 @@ escolhida manualmente por categoria via `ColorPicker`:
   `reorderActionTypes(orderedIds)`, que grava `order: index` para cada categoria num
   único `writeBatch`. O grid do cronômetro (`ActionTypeGrid`) e a própria tabela exibem
   as categorias já ordenadas por `order` (com nome como desempate).
-- **Restaurar categorias padrão**: botão em `/settings/action-types`, visível só quando
+- **Restaurar categorias padrão**: botão em `/settings` (aba Categorias), visível só quando
   não há nenhuma categoria cadastrada — cria as categorias padrão que ainda faltam
   (comparando por nome, sem duplicar), útil se a conta ficou sem categorias por causa do
   bug de seed descrito em §Bugs corrigidos.

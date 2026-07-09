@@ -10,6 +10,7 @@ import { QuickDescriptionInput } from "@/components/timer/quick-description-inpu
 import { StartTimeAdjuster } from "@/components/timer/start-time-adjuster";
 import { CategoryIcon } from "@/lib/icons";
 import { categoryColor } from "@/lib/palette";
+import { cn } from "@/lib/utils";
 import { formatClockWithMillis } from "@/lib/time/format";
 import type { ActionType, LinkedTask } from "@/lib/types";
 import type { ActiveTimerFields } from "@/hooks/use-active-timer";
@@ -116,7 +117,10 @@ export function TimerCard({
     >
       {color && (
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.08]"
+          className={cn(
+            "pointer-events-none absolute inset-0 opacity-[0.08]",
+            !isPaused && "timer-glow-running"
+          )}
           style={{ background: `radial-gradient(circle at 15% 20%, ${color}, transparent 60%)` }}
         />
       )}

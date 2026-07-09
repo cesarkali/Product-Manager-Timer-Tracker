@@ -12,7 +12,8 @@ import type { DateRange, RangePreset } from "@/lib/time/ranges";
 const DEFAULT_PRESETS: { value: Exclude<RangePreset, "custom">; label: string }[] = [
   { value: "today", label: "Hoje" },
   { value: "7d", label: "7 dias" },
-  { value: "30d", label: "30 dias" },
+  { value: "month", label: "Este mês" },
+  { value: "lastMonth", label: "Mês passado" },
 ];
 
 export function DateRangeFilter({

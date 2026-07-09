@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useActionTypes } from "@/hooks/use-action-types";
 import { useTimeEntries } from "@/hooks/use-time-entries";
 import { rangeForPreset, type DateRange, type RangePreset } from "@/lib/time/ranges";
+import { PageHeader } from "@/components/app-shell/page-header";
 import { ManualEntryForm } from "@/components/entries/manual-entry-form";
 import { EntriesTable } from "@/components/entries/entries-table";
 import { EditEntryDialog } from "@/components/entries/edit-entry-dialog";
@@ -11,10 +12,12 @@ import { DateRangeFilter } from "@/components/dashboard/date-range-filter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TimeEntry } from "@/lib/types";
 
+// Mesmo conjunto do dashboard — presets unificados entre as duas telas.
 const ENTRIES_PRESETS: { value: Exclude<RangePreset, "custom">; label: string }[] = [
   { value: "today", label: "Hoje" },
   { value: "7d", label: "7 dias" },
   { value: "month", label: "Este mês" },
+  { value: "lastMonth", label: "Mês passado" },
 ];
 
 export default function EntriesPage() {
@@ -33,27 +36,25 @@ export default function EntriesPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Registros</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Lançamentos do cronômetro e manuais, com filtro por período.
-          </p>
-        </div>
-        <DateRangeFilter
-          preset={activePreset}
-          customRange={selectedCustomRange}
-          presets={ENTRIES_PRESETS}
-          onChange={(next) => {
-            setPreset(next);
-            setActivePreset(next);
-          }}
-          onCustomRangeChange={(span) => {
-            setSelectedCustomRange(span);
-            setActivePreset("custom");
-          }}
-        />
-      </div>
+      <PageHeader
+        title="Registros"
+        description="Lançamentos do cronômetro e manuais, com filtro por período."
+        actions={
+          <DateRangeFilter
+            preset={activePreset}
+            customRange={selectedCustomRange}
+            presets={ENTRIES_PRESETS}
+            onChange={(next) => {
+              setPreset(next);
+              setActivePreset(next);
+            }}
+            onCustomRangeChange={(span) => {
+              setSelectedCustomRange(span);
+              setActivePreset("custom");
+            }}
+          />
+        }
+      />
 
       <Card>
         <CardHeader>
