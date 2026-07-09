@@ -79,48 +79,47 @@ export function WeekHourHeatmap({ entries }: { entries: TimeEntry[] }) {
         <CardTitle>Quando você trabalha</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
-        <div className="overflow-x-auto">
-          {/* Células de tamanho fixo (estilo gráfico de contribuições do GitHub) —
-              a grade dimensiona pelo conteúdo (w-fit), nunca estica pro card. */}
-          <div
-            className="grid w-fit gap-[3px]"
-            style={{ gridTemplateColumns: `2rem repeat(${hours.length}, 1rem)` }}
-          >
-            {ROW_ORDER.map((day) => (
-              <div key={day} className="contents">
-                <span className="flex items-center pr-1 text-[10px] text-muted-foreground">
-                  {DAY_LABELS[day]}
-                </span>
-                {hours.map((hour) => {
-                  const seconds = matrix[day][hour];
-                  // Piso de 12% garante que valores pequenos continuem visíveis.
-                  const intensity = seconds > 0 ? 12 + 68 * (seconds / maxSeconds) : 0;
-                  return (
-                    <div
-                      key={hour}
-                      title={`${DAY_LABELS[day]} ${hour}h — ${seconds > 0 ? formatDuration(Math.round(seconds)) : "sem registro"}`}
-                      className="h-4 w-4 rounded-[3px]"
-                      style={{
-                        backgroundColor:
-                          seconds > 0
-                            ? `color-mix(in oklch, ${HEAT_COLOR} ${intensity}%, var(--card))`
-                            : "color-mix(in oklch, var(--muted) 45%, transparent)",
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            ))}
-            <span />
-            {hours.map((hour) => (
-              <span
-                key={hour}
-                className="whitespace-nowrap text-[10px] tabular-nums text-muted-foreground"
-              >
-                {hour % 2 === 0 ? `${hour}h` : ""}
+        {/* Colunas flexíveis (minmax(0,1fr)): a grade preenche exatamente a
+            largura do card em qualquer tamanho de tela; a altura da célula é
+            fixa (h-4), então o mapa nunca "estoura" verticalmente. */}
+        <div
+          className="grid w-full gap-[3px]"
+          style={{ gridTemplateColumns: `2rem repeat(${hours.length}, minmax(0, 1fr))` }}
+        >
+          {ROW_ORDER.map((day) => (
+            <div key={day} className="contents">
+              <span className="flex items-center pr-1 text-[10px] text-muted-foreground">
+                {DAY_LABELS[day]}
               </span>
-            ))}
-          </div>
+              {hours.map((hour) => {
+                const seconds = matrix[day][hour];
+                // Piso de 12% garante que valores pequenos continuem visíveis.
+                const intensity = seconds > 0 ? 12 + 68 * (seconds / maxSeconds) : 0;
+                return (
+                  <div
+                    key={hour}
+                    title={`${DAY_LABELS[day]} ${hour}h — ${seconds > 0 ? formatDuration(Math.round(seconds)) : "sem registro"}`}
+                    className="h-4 w-full min-w-0 rounded-[3px]"
+                    style={{
+                      backgroundColor:
+                        seconds > 0
+                          ? `color-mix(in oklch, ${HEAT_COLOR} ${intensity}%, var(--card))`
+                          : "color-mix(in oklch, var(--muted) 45%, transparent)",
+                    }}
+                  />
+                );
+              })}
+            </div>
+          ))}
+          <span />
+          {hours.map((hour) => (
+            <span
+              key={hour}
+              className="whitespace-nowrap text-[10px] tabular-nums text-muted-foreground"
+            >
+              {hour % 2 === 0 ? `${hour}h` : ""}
+            </span>
+          ))}
         </div>
         <div className="flex items-center gap-1.5 pl-8 text-[10px] text-muted-foreground">
           menos
