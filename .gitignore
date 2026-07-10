@@ -46,6 +46,9 @@ next-env.d.ts
 firebase-debug.log
 firestore-debug.log
 
+# extensão chrome — saída de build (carregada como "descompactada" no Chrome)
+/extension/dist/
+
 AGENTS.md
 .agents/
 CLAUDE.md
