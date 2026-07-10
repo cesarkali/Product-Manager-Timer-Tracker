@@ -23,6 +23,7 @@ import {
   type ActionType,
   type ActiveTimer,
   type LinkedTask,
+  type StoryPoints,
 } from "@/lib/types";
 import {
   discardTimer,
@@ -33,7 +34,6 @@ import {
   updateActiveTimerFields,
   addLinkedTask,
 } from "../lib/timer-ops";
-import { STORY_POINT_OPTIONS, type StoryPoints } from "@/lib/types";
 
 
 export function App() {
