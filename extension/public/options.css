@@ -1,0 +1,264 @@
+/* Página de opções da extensão PMTT Timer. */
+:root {
+  --bg: #0e1116;
+  --card: #161a21;
+  --card-2: #1d222c;
+  --border: #2a303b;
+  --text: #e8ebef;
+  --muted: #98a1ad;
+  --accent: #9085e9;
+  --danger: #e66767;
+  --ok: #3fd39e;
+  --radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+.opt-page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.opt-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.opt-header h1 {
+  font-size: 20px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.opt-brand-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  display: inline-block;
+}
+
+.opt-saved {
+  color: var(--ok);
+  font-size: 12.5px;
+}
+
+.opt-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.opt-card h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.opt-muted {
+  color: var(--muted);
+  margin: 0;
+  font-size: 13px;
+}
+
+.opt-account {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.opt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.opt-field > span {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.opt-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+input[type="text"],
+input[type="url"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  width: 100%;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.opt-btn {
+  align-self: flex-start;
+  border: 1px solid var(--border);
+  background: var(--card-2);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.opt-btn:hover {
+  border-color: var(--accent);
+}
+
+.opt-btn-ghost {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  padding: 7px 9px;
+}
+
+.opt-btn-ghost:hover {
+  color: var(--danger);
+}
+
+.opt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.opt-row {
+  display: grid;
+  grid-template-columns: 1fr 36px;
+  gap: 8px;
+  align-items: center;
+}
+
+.opt-rules-head,
+.opt-rule-row {
+  display: grid;
+  grid-template-columns: 1fr 170px 64px 110px 36px;
+  gap: 8px;
+  align-items: center;
+}
+
+.opt-rules-head {
+  font-size: 11.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.opt-rules-head span:nth-child(3) {
+  text-align: center;
+}
+
+.opt-rule-row input[type="checkbox"] {
+  justify-self: center;
+}
+
+/* login reaproveitado do shared/login-form */
+.pmtt-login {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+}
+
+.pmtt-login-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pmtt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pmtt-field > span {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.pmtt-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.pmtt-btn {
+  border: 1px solid var(--border);
+  background: var(--card-2);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.pmtt-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #14121f;
+  font-weight: 600;
+}
+
+.pmtt-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+@media (max-width: 640px) {
+  .opt-rules-head {
+    display: none;
+  }
+
+  .opt-rule-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}

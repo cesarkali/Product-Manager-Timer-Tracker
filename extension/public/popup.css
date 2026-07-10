@@ -1,0 +1,513 @@
+/* ================================================================
+   PMTT Timer — Popup  |  fonte: extension/public/popup.css
+   Build copia este arquivo para dist/. EDITE AQUI, não em dist/.
+   ================================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ── tokens escuro (padrão) ─────────────────────────────────── */
+:root {
+  --bg:         #0d1117;
+  --surface:    #161b22;
+  --surface2:   #1c2230;
+  --surface3:   #222a38;
+  --border:     #2d3748;
+  --border-s:   #1e2533;
+  --text:       #e2e8f0;
+  --text-2:     #a0aec0;
+  --accent:     #7c6ee0;
+  --accent-hl:  #9580f5;
+  --accent-dim: rgba(124,110,224,.15);
+  --ok:         #38a169;
+  --ok-dim:     rgba(56,161,105,.15);
+  --danger:     #e53e3e;
+  --danger-dim: rgba(229,62,62,.13);
+  --warn:       #d69e2e;
+  --r:          14px;
+  --r-sm:       8px;
+  --r-xs:       6px;
+}
+
+/* ── tokens claro ────────────────────────────────────────────── */
+html.light {
+  --bg:         #f0f4f8;
+  --surface:    #ffffff;
+  --surface2:   #edf2f7;
+  --surface3:   #e2e8f0;
+  --border:     #cbd5e0;
+  --border-s:   #e2e8f0;
+  --text:       #1a202c;
+  --text-2:     #718096;
+  --accent:     #6b52d6;
+  --accent-hl:  #7c63e8;
+  --accent-dim: rgba(107,82,214,.12);
+  --ok:         #276749;
+  --ok-dim:     rgba(39,103,73,.12);
+  --danger:     #c53030;
+  --danger-dim: rgba(197,48,48,.1);
+  --warn:       #b7791f;
+}
+
+/* ── reset & base ────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  width: 600px;
+  height: 600px; /* Chrome popups têm tamanho máximo de 600x600 */
+  margin: 0;
+  overflow: hidden;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--bg);
+  transition: background .25s, color .25s;
+}
+
+/* scrollbar personalizado */
+::-webkit-scrollbar       { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-2); }
+
+/* ── layout raiz ─────────────────────────────────────────────── */
+/* Chrome popups limitam a janela em 600px de altura.
+   Ao definir 600px exatos, preenchemos o limite e deixamos 
+   apenas o .pmtt-body criar scroll internamente. */
+.pmtt-popup {
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  overflow: hidden;
+}
+
+/* ── header ──────────────────────────────────────────────────── */
+.pmtt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-s);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.pmtt-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -.02em;
+  color: var(--text);
+}
+
+.pmtt-brand-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  animation: pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 8px var(--accent); opacity: 1; }
+  50%       { box-shadow: 0 0 20px var(--accent-hl); opacity: .85; }
+}
+
+.pmtt-header-actions { display: flex; gap: 3px; align-items: center; }
+
+.pmtt-icon-btn {
+  width: 32px; height: 32px;
+  border: none; background: transparent; color: var(--text-2);
+  border-radius: var(--r-sm); cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s;
+}
+.pmtt-icon-btn:hover { background: var(--surface3); color: var(--text); }
+
+/* ── body scrollável ─────────────────────────────────────────── */
+/* min-height: 0 é essencial para overflow-y:auto funcionar dentro
+   de um flex container com height:680px (sem ele flex ignora overflow) */
+.pmtt-body {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pmtt-pad { padding: 20px 16px; }
+.pmtt-muted { color: var(--text-2); font-size: 12.5px; }
+
+.pmtt-empty {
+  padding: 28px 16px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--r);
+  color: var(--text-2);
+  text-align: center;
+  background: var(--surface);
+}
+
+/* ── timer ativo ─────────────────────────────────────────────── */
+.pmtt-timer {
+  background: var(--surface);
+  border: 1px solid var(--border-s);
+  border-radius: var(--r);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 2px 16px rgba(0,0,0,.12);
+}
+
+.pmtt-timer-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pmtt-chip {
+  width: 12px; height: 12px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.pmtt-timer-name {
+  font-weight: 700; font-size: 14.5px;
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.pmtt-paused-badge {
+  font-size: 11px; font-weight: 600;
+  color: var(--warn);
+  border: 1px solid var(--warn);
+  border-radius: 999px;
+  padding: 1px 9px;
+}
+
+/* rel\u00f3gio — cor s\u00f3lida + text-shadow para n\u00e3o depender de background-clip
+   (background-clip:text quebra com Dark Reader e algumas extens\u00f5es de tema) */
+.pmtt-clock {
+  font-size: 52px;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: .02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  text-shadow:
+    0 0 30px var(--accent-hl),
+    0 0 60px rgba(124,110,224,.3);
+  line-height: 1.1;
+  padding: 6px 0;
+  transition: color .3s;
+}
+.pmtt-clock.is-paused {
+  color: var(--text-2);
+  text-shadow: none;
+}
+
+/* controles */
+.pmtt-controls { display: flex; gap: 8px; }
+
+.pmtt-btn {
+  flex: 1;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  border-radius: var(--r-sm);
+  font-size: 12.5px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+  transition: border-color .15s, background .15s, transform .1s;
+}
+.pmtt-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.pmtt-btn:active:not(:disabled) { transform: scale(.97); }
+.pmtt-btn:disabled { opacity: .4; cursor: default; }
+
+.pmtt-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.pmtt-btn-primary:hover:not(:disabled) {
+  background: var(--accent-hl);
+  border-color: var(--accent-hl);
+}
+
+.pmtt-btn-danger { color: var(--danger); border-color: var(--border); }
+.pmtt-btn-danger:hover:not(:disabled) { border-color: var(--danger); background: var(--danger-dim); }
+.pmtt-btn-danger.is-confirm {
+  background: var(--danger-dim);
+  border-color: var(--danger);
+}
+
+/* ── campos ──────────────────────────────────────────────────── */
+.pmtt-field { display: flex; flex-direction: column; gap: 5px; }
+
+.pmtt-field > span,
+.pmtt-field-label {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em;
+  color: var(--text-2);
+}
+
+.pmtt-field input,
+.pmtt-field textarea,
+.pmtt-task-add input,
+.pmtt-task-add select,
+.pmtt-jira-row input,
+.pmtt-jira-row select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  padding: 8px 11px;
+  font-size: 13px;
+  font-family: inherit;
+  width: 100%;
+  transition: border-color .15s, box-shadow .15s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.pmtt-field input:focus,
+.pmtt-field textarea:focus,
+.pmtt-task-add input:focus,
+.pmtt-task-add select:focus,
+.pmtt-jira-row input:focus,
+.pmtt-jira-row select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.pmtt-field textarea { resize: vertical; min-height: 56px; }
+
+/* ── divider ─────────────────────────────────────────────────── */
+.pmtt-divider {
+  height: 1px;
+  background: var(--border-s);
+  border: none;
+  margin: 0;
+}
+
+/* ── tasks vinculadas ────────────────────────────────────────── */
+.pmtt-tasks { display: flex; flex-direction: column; gap: 8px; }
+
+.pmtt-tasks-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.pmtt-task-row {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border-s);
+  border-radius: var(--r-sm);
+  padding: 8px 11px;
+  transition: border-color .15s;
+}
+.pmtt-task-row:hover { border-color: var(--border); }
+
+.pmtt-task-type {
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em;
+  border-radius: var(--r-xs);
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+.pmtt-task-type.is-jira     { background: rgba(59,130,246,.2); color: #60a5fa; }
+.pmtt-task-type.is-movidesk { background: rgba(16,185,129,.2); color: #34d399; }
+
+.pmtt-task-ref {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 12.5px; color: var(--text);
+}
+
+.pmtt-task-sp {
+  font-size: 11px; color: var(--text-2); flex-shrink: 0;
+  background: var(--surface3);
+  padding: 1px 6px; border-radius: var(--r-xs);
+}
+
+.pmtt-task-remove {
+  width: 24px; height: 24px; border-radius: var(--r-xs);
+  border: none; background: transparent; color: var(--text-2);
+  cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s;
+  flex-shrink: 0;
+}
+.pmtt-task-remove:hover { background: var(--danger-dim); color: var(--danger); }
+
+/* grid add: tipo | input | SP | 🔗 | + */
+.pmtt-task-add {
+  display: grid;
+  grid-template-columns: 92px 1fr 60px 34px 34px;
+  gap: 6px;
+  align-items: start;
+}
+
+.pmtt-url-btn {
+  width: 34px; height: 34px;
+  border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text-2);
+  border-radius: var(--r-sm); cursor: pointer; font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .15s, color .15s;
+}
+.pmtt-url-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.pmtt-url-btn:disabled { opacity: .4; cursor: default; }
+
+.pmtt-add-btn {
+  width: 34px; height: 34px;
+  border: 1px solid var(--accent);
+  background: var(--accent-dim); color: var(--accent);
+  border-radius: var(--r-sm); cursor: pointer; font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  transition: background .15s;
+}
+.pmtt-add-btn:hover:not(:disabled) { background: var(--accent); color: #fff; }
+.pmtt-add-btn:disabled { opacity: .4; cursor: default; }
+
+/* ── card Jira ────────────────────────────────────────────────── */
+.pmtt-jira-card {
+  background: linear-gradient(135deg, var(--accent-dim), var(--surface));
+  border: 1px solid rgba(124,110,224,.35);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+.pmtt-jira-card-header {
+  display: flex; align-items: center; gap: 10px;
+}
+
+.pmtt-jira-badge-big {
+  font-size: 11px; font-weight: 700;
+  background: var(--accent); color: #fff;
+  border-radius: var(--r-xs); padding: 3px 9px;
+  text-transform: uppercase; letter-spacing: .05em;
+  flex-shrink: 0;
+}
+
+.pmtt-jira-card-title {
+  font-size: 13px; font-weight: 600; flex: 1;
+}
+
+.pmtt-jira-linked {
+  font-size: 12px; font-weight: 600; color: var(--ok);
+  background: var(--ok-dim);
+  padding: 3px 10px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+
+.pmtt-jira-row {
+  display: grid;
+  grid-template-columns: 1fr 60px 34px;
+  gap: 6px;
+  align-items: start;
+}
+
+/* ── comentários / templates ─────────────────────────────────── */
+.pmtt-templates { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.pmtt-template-chip {
+  border: 1px solid var(--border);
+  background: transparent; color: var(--text-2);
+  border-radius: 999px; padding: 4px 12px; font-size: 12px;
+  cursor: pointer; font-family: inherit;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.pmtt-template-chip:hover {
+  border-color: var(--accent); color: var(--text);
+  background: var(--accent-dim);
+}
+
+/* ── grade de categorias ─────────────────────────────────────── */
+.pmtt-section { display: flex; flex-direction: column; gap: 10px; }
+
+.pmtt-section-title {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  color: var(--text-2);
+}
+
+.pmtt-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 7px;
+}
+
+.pmtt-grid-item {
+  display: flex; align-items: center; gap: 9px;
+  background: var(--surface); border: 1px solid var(--border-s);
+  border-radius: var(--r-sm); padding: 10px 12px;
+  color: var(--text); cursor: pointer; text-align: left; min-width: 0;
+  transition: border-color .15s, background .15s, box-shadow .15s, transform .1s;
+}
+.pmtt-grid-item:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+.pmtt-grid-item:active:not(:disabled) { transform: scale(.97); }
+.pmtt-grid-item.is-current {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+.pmtt-grid-item:disabled { cursor: default; opacity: .95; }
+
+.pmtt-grid-icon { display: inline-flex; flex-shrink: 0; }
+
+.pmtt-grid-name {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 12.5px; font-weight: 500;
+}
+
+.pmtt-grid-key {
+  font-size: 10px; color: var(--text-2);
+  border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px;
+  flex-shrink: 0; font-weight: 600;
+}
+
+/* ── login ───────────────────────────────────────────────────── */
+.pmtt-login {
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 24px 16px;
+}
+.pmtt-login-title {
+  font-size: 18px; font-weight: 800; letter-spacing: -.02em;
+}
+.pmtt-login-hint { color: var(--text-2); font-size: 13px; }
+.pmtt-error { color: var(--danger); font-size: 12.5px; }
+
+/* ── toast ───────────────────────────────────────────────────── */
+.pmtt-toast {
+  position: fixed; left: 14px; right: 14px; bottom: 14px;
+  padding: 10px 16px; border-radius: var(--r-sm);
+  font-size: 12.5px; font-weight: 500; text-align: center; z-index: 99;
+  border: 1px solid var(--border); background: var(--surface2);
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  animation: slideUp .2s ease;
+}
+.pmtt-toast.is-ok { border-color: var(--ok); color: var(--ok); }
+.pmtt-toast.is-error { border-color: var(--danger); color: var(--danger); }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
