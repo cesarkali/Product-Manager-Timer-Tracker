@@ -2,7 +2,13 @@
 
 Cronômetro do PMTT no navegador: controle o timer pelo popup, vincule tickets do
 Movidesk e issues do Jira ao registro em andamento com um clique, e receba
-sugestões de categoria ao navegar (regras por domínio).
+sugestões de categoria ao navegar (regras por domínio). A extensão não injeta
+nada nas páginas — tudo acontece no popup e nas notificações do Chrome.
+
+## Screenshots da loja
+
+`node extension/scripts/make-screenshots.mjs` gera as artes de 1280×800 em
+`extension/store/` usando o Chrome/Edge headless instalado na máquina.
 
 ## Como instalar (uma vez)
 
@@ -27,13 +33,12 @@ sugestões de categoria ao navegar (regras por domínio).
 - **Popup** (ícone na barra): iniciar/trocar categoria (atalhos 1–9, como no
   app), pausar, parar, descartar, descrição, tasks vinculadas e comentários.
   O badge do ícone mostra o tempo decorrido — verde rodando, âmbar pausado.
-- **Widget no Movidesk/Jira**: uma pílula flutuante no canto inferior direito
-  de `bitz.movidesk.com` e `bitzsoftwares.atlassian.net`. Com um ticket aberto,
-  o widget detecta o número pela URL e oferece **"Vincular ao timer"**; no
-  Movidesk também há o atalho **"Criou task no Jira?"** — adicionar a chave da
-  task marca o registro como *task criada* no PMTT (mesma regra do app).
-- **Opções** (engrenagem no popup): URL do PMTT publicado, ligar/desligar o
-  widget, templates de comentário e as **regras por domínio** (ex.: "estou em
+- **Capturar ticket/issue**: com um ticket do Movidesk ou issue do Jira aberto
+  na aba ativa, o botão de link (🔗) no popup detecta a referência pela URL e
+  preenche o tipo e o link canônico automaticamente. O atalho **"Criou task no
+  Jira?"** marca o registro como *task criada* no PMTT (mesma regra do app).
+- **Opções** (engrenagem no popup): templates de comentário e as **regras por
+  domínio** (ex.: "estou em
   `bitz.movidesk.com` → sugerir categoria *Suporte*"). A sugestão chega como
   notificação do Chrome com botão de um clique; a troca nunca é automática.
 

@@ -77,7 +77,8 @@ service cloud.firestore {
       allow read: if isOwner(uid);
       allow create: if isOwner(uid) && request.resource.data.email is string;
       allow update: if isOwner(uid);
-      allow delete: if false;
+      // Exclusão de conta (zona de perigo): só o próprio dono, nunca terceiros.
+      allow delete: if isOwner(uid);
 
       match /actionTypes/{actionTypeId} {
         allow read: if isOwner(uid);
@@ -106,6 +107,30 @@ service cloud.firestore {
         allow update: if isOwner(uid) && docId == 'current' && isValidActiveTimer(request.resource.data);
         allow delete: if isOwner(uid);
       }
+
+      // Log de atividade (Configurações → Atividade): criações, edições e
+      // exclusões, com snapshot para restaurar. update só marca restauração.
+      match /activityLog/{logId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid)
+          && request.resource.data.action in ['create', 'update', 'delete', 'restore']
+          && request.resource.data.entity in ['timeEntry', 'actionType', 'businessArea']
+          && request.resource.data.entityId is string
+          && request.resource.data.label is string;
+        allow update: if isOwner(uid);
+        allow delete: if isOwner(uid);
+      }
+    }
+
+    // Cooldown de recadastro: gravado na exclusão da conta e lido no cadastro.
+    // Só o dono do e-mail autenticado pode gravar o próprio cooldown.
+    match /signupCooldowns/{emailId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn()
+        && request.auth.token.email is string
+        && emailId == request.auth.token.email.lower()
+        && request.resource.data.until is timestamp;
+      allow delete: if false;
     }
 
     // Tudo que não bater com as regras acima é negado por padrão.

@@ -10,11 +10,27 @@ import {
   useElapsedSeconds,
   useExtensionSettings,
   useNotice,
+  useSkin,
   useTheme,
 } from "../shared/hooks";
 
+import {
+  ExternalLink,
+  Link2,
+  Moon,
+  Pause,
+  Play,
+  Plus,
+  Settings,
+  Square,
+  Sun,
+  Trash2,
+  X,
+} from "lucide-react";
 import { LoginForm } from "../shared/login-form";
 import { CategoryGrid } from "../shared/category-grid";
+import { detectFromUrl } from "../lib/detect";
+import { PMTT_APP_URL } from "../lib/settings";
 import { formatClock, formatDuration } from "@/lib/time/format";
 import { categoryColor } from "@/lib/palette";
 import {
@@ -40,6 +56,7 @@ export function App() {
   const { user, loading } = useAuthState();
   const { settings } = useExtensionSettings();
   const [theme, toggleTheme] = useTheme();
+  useSkin(); // aplica o tema salvo (o seletor vive na página de opções)
 
   return (
     <div className="pmtt-popup">
@@ -55,25 +72,23 @@ export function App() {
             title={theme === "dark" ? "Mudar para tema claro" : "Mudar para tema escuro"}
             onClick={toggleTheme}
           >
-            {theme === "dark" ? "☀️" : "🌙"}
+            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
           </button>
-          {settings.appUrl ? (
-            <button
-              type="button"
-              className="pmtt-icon-btn"
-              title="Abrir PMTT"
-              onClick={() => chrome.tabs.create({ url: settings.appUrl })}
-            >
-              ↗
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="pmtt-icon-btn"
+            title="Abrir PMTT"
+            onClick={() => chrome.tabs.create({ url: PMTT_APP_URL })}
+          >
+            <ExternalLink size={16} />
+          </button>
           <button
             type="button"
             className="pmtt-icon-btn"
             title="Opções da extensão"
             onClick={() => chrome.runtime.openOptionsPage()}
           >
-            ⚙
+            <Settings size={16} />
           </button>
         </span>
       </header>
@@ -95,6 +110,15 @@ function SignedIn({ uid, commentTemplates }: { uid: string; commentTemplates: st
   const { activeActionTypes, loading: typesLoading } = useActionTypesList(uid);
   const { notice, showOk, showError } = useNotice();
   const [busy, setBusy] = useState(false);
+  const [categoryQuery, setCategoryQuery] = useState("");
+
+  // Com muitas categorias a grade fica longa — um filtro rápido resolve.
+  const showCategoryFilter = activeActionTypes.length > 9;
+  const visibleActionTypes = useMemo(() => {
+    const query = categoryQuery.trim().toLowerCase();
+    if (!query) return activeActionTypes;
+    return activeActionTypes.filter((a) => a.name.toLowerCase().includes(query));
+  }, [activeActionTypes, categoryQuery]);
 
   const actionTypesById = useMemo(() => {
     const map = new Map<string, ActionType>();
@@ -167,13 +191,29 @@ function SignedIn({ uid, commentTemplates }: { uid: string; commentTemplates: st
       )}
 
       <section className="pmtt-section">
-        <h2 className="pmtt-section-title">{timer ? "Trocar de categoria" : "Iniciar categoria"}</h2>
+        <div className="pmtt-section-head">
+          <h2 className="pmtt-section-title">
+            {timer ? "Trocar de categoria" : "Iniciar categoria"}
+          </h2>
+          {showCategoryFilter ? (
+            <input
+              type="search"
+              className="pmtt-cat-filter"
+              value={categoryQuery}
+              placeholder="Filtrar categorias…"
+              onChange={(e) => setCategoryQuery(e.target.value)}
+            />
+          ) : null}
+        </div>
         <CategoryGrid
-          actionTypes={activeActionTypes}
+          actionTypes={visibleActionTypes}
           currentActionTypeId={timer?.actionTypeId}
           onSelect={(actionType) => void handleStart(actionType)}
           disabled={busy}
         />
+        {visibleActionTypes.length === 0 && categoryQuery ? (
+          <p className="pmtt-muted">Nenhuma categoria com "{categoryQuery}".</p>
+        ) : null}
       </section>
 
       {notice ? <div className={`pmtt-toast is-${notice.kind}`}>{notice.text}</div> : null}
@@ -245,7 +285,7 @@ function TimerSection({
               })
             }
           >
-            Retomar
+            <Play size={14} /> Retomar
           </button>
         ) : (
           <button
@@ -259,7 +299,7 @@ function TimerSection({
               })
             }
           >
-            Pausar
+            <Pause size={14} /> Pausar
           </button>
         )}
         <button
@@ -273,7 +313,7 @@ function TimerSection({
             })
           }
         >
-          Parar
+          <Square size={13} /> Parar
         </button>
         <button
           type="button"
@@ -291,7 +331,7 @@ function TimerSection({
             });
           }}
         >
-          {confirmDiscard ? "Confirmar?" : "Descartar"}
+          {confirmDiscard ? "Confirmar?" : <><Trash2 size={13} /> Descartar</>}
         </button>
       </div>
 
@@ -360,6 +400,7 @@ function TimerSection({
 const TASK_TYPE_LABEL: Record<LinkedTask["type"], string> = {
   jira: "Jira",
   movidesk: "Movidesk",
+  link: "Link",
 };
 
 function TasksEditor({
@@ -380,11 +421,20 @@ function TasksEditor({
   const [storyPoints, setStoryPoints] = useState<LinkedTask["storyPoints"]>(0);
   const [capturing, setCapturing] = useState(false);
 
+  // Captura a URL da aba ativa; se for um ticket do Movidesk ou issue do Jira,
+  // ajusta o tipo automaticamente e usa a URL canônica.
   async function captureActiveUrl() {
     setCapturing(true);
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab?.url) setReference(tab.url);
+      if (!tab?.url) return;
+      const detected = detectFromUrl(tab.url);
+      if (detected) {
+        setType(detected.type);
+        setReference(detected.reference);
+      } else {
+        setReference(tab.url);
+      }
     } finally {
       setCapturing(false);
     }
@@ -421,7 +471,7 @@ function TasksEditor({
             disabled={busy}
             onClick={() => onChange(tasks.filter((_, i) => i !== index))}
           >
-            ×
+            <X size={14} />
           </button>
         </div>
       ))}
@@ -429,6 +479,7 @@ function TasksEditor({
         <select value={type} onChange={(e) => setType(e.target.value as LinkedTask["type"])}>
           <option value="movidesk">Movidesk</option>
           <option value="jira">Jira</option>
+          <option value="link">Link</option>
         </select>
         <input
           type="text"
@@ -453,7 +504,7 @@ function TasksEditor({
           disabled={busy || capturing}
           onClick={() => void captureActiveUrl()}
         >
-          🔗
+          <Link2 size={15} />
         </button>
         <button
           type="button"
@@ -462,7 +513,7 @@ function TasksEditor({
           onClick={addTask}
           title="Adicionar task"
         >
-          +
+          <Plus size={16} />
         </button>
       </div>
     </div>
@@ -533,7 +584,7 @@ function JiraCard({
           title="Vincular task do Jira"
           onClick={addJira}
         >
-          +
+          <Plus size={16} />
         </button>
       </div>
     </div>

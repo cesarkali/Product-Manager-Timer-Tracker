@@ -369,24 +369,26 @@ export function DashboardContent() {
 
   return (
     <div className="print-compact flex flex-col gap-8 print:gap-5">
-      <PageHeader
-        className="print:hidden"
-        title="Dashboard"
-        description="Evidência de onde o seu tempo foi gasto no período selecionado."
-        actions={
-          <>
-            <DateRangeFilter
-              preset={preset}
-              customRange={activeCustomRange}
-              onChange={setPreset}
-              onCustomRangeChange={setCustomRange}
-            />
-            <Button size="sm" variant="outline" onClick={() => window.print()}>
-              Exportar / imprimir
-            </Button>
-          </>
-        }
-      />
+      <div data-tour="dashboard-header">
+        <PageHeader
+          className="print:hidden"
+          title="Dashboard"
+          description="Evidência de onde o seu tempo foi gasto no período selecionado."
+          actions={
+            <>
+              <DateRangeFilter
+                preset={preset}
+                customRange={activeCustomRange}
+                onChange={setPreset}
+                onCustomRangeChange={setCustomRange}
+              />
+              <Button size="sm" variant="outline" onClick={() => window.print()}>
+                Exportar / imprimir
+              </Button>
+            </>
+          }
+        />
+      </div>
 
       <div className="hidden print:block">
         <div className="flex items-baseline justify-between border-b pb-3">
@@ -439,7 +441,7 @@ export function DashboardContent() {
 
       <CollapsibleSection
         title="Tempo por task"
-        description="Cada task Jira/Movidesk trabalhada no período, com o tempo somado e o número de sessões — evidência direta do que foi entregue."
+        description="Cada task ou link trabalhado no período (Jira, Movidesk ou qualquer ferramenta), com o tempo somado e o número de sessões — evidência direta do que foi entregue."
         count={taskAggregates.length}
         printVisible
       >

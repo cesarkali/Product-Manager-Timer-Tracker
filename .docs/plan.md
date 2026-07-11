@@ -132,3 +132,43 @@ O PMTT registra tempo, mas hoje é pouco prático no uso diário: descrever o qu
 | `updateDoc(activeTimer, {startTime})` | ajuste retroativo | doc efêmero; validação client (não-futuro, < pausedAt) |
 
 Sem índice composto novo (todas as queries continuam em campo único `startTime`). Rules antigas já aceitam os campos novos → deploy e rollback seguros em qualquer ordem (ainda assim: rules primeiro).
+
+---
+
+## Fase 7 — Plataforma aberta (jul/2026) ✅
+
+Transformação de ferramenta pessoal em plataforma multiusuário, mantendo o princípio
+inegociável de mudanças aditivas nos dados:
+
+- **Contas abertas**: cadastro por e-mail/senha e Google na tela de login (repaginada:
+  painel da marca com aurora animada, campos com identidade própria), recuperação de
+  senha. Habilitar provedor Google no console (Authentication → Sign-in method).
+- **Onboarding**: tour guiado de 11 passos com balões ancorados nos elementos reais
+  (spotlight + navegação automática entre telas, fallback centralizado no mobile),
+  aceite obrigatório dos termos (campos aditivos `termsAcceptedAt` /
+  `onboardingCompletedAt` em `users/{uid}`). "Refazer o tour" em Preferências.
+- **Termos completos** em `src/components/legal/terms-content.tsx` — fonte única para
+  `/privacidade`, leitor do wizard e diálogo do login. Contato: julio@caliberda.com.br.
+- **Novidades**: `src/lib/changelog.ts` (`APP_VERSION` + `CHANGELOG`); badge na sidebar
+  via `lastSeenChangelogVersion` no doc do usuário.
+- **Seed sob demanda**: eliminado o seed automático de categorias/áreas (bug de corrida
+  triplicava o kit) — só via botão idempotente (Configurações ou wizard).
+- **Aparência**: 11 temas completos via `data-skin` no `<html>` (+ densidade e cantos
+  via `data-density`/`data-corners`), persistidos em localStorage e aplicados por boot
+  script pré-hidratação (`suppressHydrationWarning` no `<html>`).
+- **Atividade** (`/atividade` no menu): log de criações/edições/exclusões em
+  `users/{uid}/activityLog`, com snapshot nas exclusões e **restauração com o mesmo id**.
+- **Zona de perigo**: exclusão da própria conta (reautenticação + digitar EXCLUIR),
+  apaga subcoleções em lotes sob o uid autenticado; cooldown de recadastro de 24h em
+  `signupCooldowns/{email}` (novas rules — republicar!).
+- **Tasks genéricas**: tipo `"link"` além de jira/movidesk (aditivo).
+- **Extensão do Chrome** (publicada:
+  https://chromewebstore.google.com/detail/honniaakfdobdmepkhoobbamggpbconf):
+  sem content scripts (menos permissões), popup repaginado, notificações com antiflood
+  e "silenciar por hoje", cadastro no popup, temas sincronizados via
+  `chrome.storage.local`, screenshots da loja geradas por script (genéricas, sem
+  marcas de clientes).
+
+Rules atualizadas nesta fase: `users/{uid}` permite `delete` pelo dono; novas coleções
+`users/{uid}/activityLog` e `signupCooldowns/{email}` — **republicar firestore.rules no
+console** antes do deploy.

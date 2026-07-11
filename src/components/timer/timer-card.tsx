@@ -159,7 +159,7 @@ export function TimerCard({
               <LinkedTasksEditor
                 items={tasksValue}
                 onAdd={() =>
-                  commitTasks([...tasksValue, { type: "jira", reference: "", storyPoints: 0 }])
+                  commitTasks([...tasksValue, { type: "link", reference: "", storyPoints: 0 }])
                 }
                 onRemove={(index) => commitTasks(tasksValue.filter((_, i) => i !== index))}
                 onChangeItem={(index, patch) =>

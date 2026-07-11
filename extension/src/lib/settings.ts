@@ -22,11 +22,14 @@ export interface ExtensionSettings {
   domainRules: DomainRule[];
   /** Textos fixos para inserir com um clique no comentário do timer. */
   commentTemplates: string[];
-  /** Mostra o widget flutuante no Movidesk/Jira. */
-  widgetEnabled: boolean;
-  /** URL do PMTT publicado (ex.: https://pmtt.vercel.app) — habilita o link "Abrir PMTT". */
-  appUrl: string;
+  /** Se true, as regras também notificam com um cronômetro rodando (sugerindo
+   * a troca de categoria). Padrão false: só notifica quando não há timer —
+   * quem já está cronometrando não é interrompido. */
+  notifyWhileRunning: boolean;
 }
+
+/** URL do PMTT publicado — o botão "Abrir PMTT" do popup aponta para cá. */
+export const PMTT_APP_URL = "https://pmtt.caliberda.com.br";
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {
   domainRules: [],
@@ -34,8 +37,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
     "Task criada no Jira a partir do ticket do Movidesk.",
     "Atendimento resolvido sem necessidade de task.",
   ],
-  widgetEnabled: true,
-  appUrl: "",
+  notifyWhileRunning: false,
 };
 
 export async function loadSettings(): Promise<ExtensionSettings> {

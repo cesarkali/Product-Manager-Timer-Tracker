@@ -18,7 +18,21 @@ export interface UserProfile {
   workEnd?: string;
   /** Dias úteis, 0=domingo..6=sábado (padrão seg–sex). */
   workDays?: number[];
+  /** Aceite dos Termos de Uso e Política de Privacidade (checkbox do wizard). */
+  termsAcceptedAt?: Timestamp;
+  /** Conclusão do wizard de boas-vindas — ausente = primeira visita. */
+  onboardingCompletedAt?: Timestamp;
+  /** Última versão do changelog vista — controla o badge "Novidades". */
+  lastSeenChangelogVersion?: string;
+  /** Tema de aparência (skin) salvo no banco — sincronizado entre dispositivos. */
+  skin?: string;
+  /** Densidade do layout ("confortavel" | "compacto"). */
+  density?: string;
+  /** Raio dos cantos ("reto" | "padrao" | "redondo"). */
+  corners?: string;
 }
+
+
 
 /** Área de negócio — agrupa categorias no dashboard ("Tempo por área"). CRUD
  * completo pelo usuário em Configurações → Áreas, mesmo padrão de ActionType
@@ -62,8 +76,20 @@ export const DESCRIPTION_MAX_LENGTH = 140;
 export const STORY_POINT_OPTIONS = [0, 1, 2, 3, 5, 8, 13, 21] as const;
 export type StoryPoints = (typeof STORY_POINT_OPTIONS)[number];
 
+/** Tipos de vínculo de task. "jira" e "movidesk" existem desde o início e têm
+ * detecção/atalhos próprios; "link" é o genérico para qualquer outra
+ * ferramenta (Trello, GitHub, planilha, doc…) — aditivo, registros antigos
+ * continuam válidos. */
+export const TASK_TYPE_LABELS = {
+  jira: "Jira",
+  movidesk: "Movidesk",
+  link: "Link",
+} as const;
+
+export type LinkedTaskType = keyof typeof TASK_TYPE_LABELS;
+
 export interface LinkedTask {
-  type: "jira" | "movidesk";
+  type: LinkedTaskType;
   reference: string;
   storyPoints: StoryPoints;
 }

@@ -1,6 +1,7 @@
 // Gera os ícones PNG da extensão (16/32/48/128) sem dependências: quadrado
-// arredondado violeta (cor da marca do PMTT) com um triângulo de "play"
-// branco. Encoder PNG mínimo — zlib do Node + CRC32 manual.
+// arredondado com gradiente violeta (marca do PMTT), brilho suave no topo e
+// triângulo de "play" branco com sombra. Encoder PNG mínimo — zlib do Node +
+// CRC32 manual.
 import { deflateSync } from "node:zlib";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -57,11 +58,17 @@ function encodePng(size, rgba) {
   ]);
 }
 
-const BG = [74, 58, 167]; // #4a3aa7 — violeta da paleta do PMTT
+// Gradiente diagonal da marca: violeta claro (topo-esquerda) → índigo profundo.
+const GRAD_A = [157, 140, 255]; // #9d8cff
+const GRAD_B = [70, 48, 168]; // #4630a8
 const FG = [255, 255, 255];
 
+function mix(a, b, t) {
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+}
+
 function insideRoundedSquare(u, v) {
-  const radius = 0.2;
+  const radius = 0.24;
   const min = radius;
   const max = 1 - radius;
   const cx = u < min ? min : u > max ? max : u;
@@ -71,8 +78,9 @@ function insideRoundedSquare(u, v) {
   return dx * dx + dy * dy <= radius * radius;
 }
 
-// Triângulo de play: A/B na vertical esquerda, C na ponta direita.
-const TRI = { ax: 0.4, ay: 0.31, bx: 0.4, by: 0.69, cx: 0.75, cy: 0.5 };
+// Triângulo de play: A/B na vertical esquerda, C na ponta direita
+// (levemente deslocado à direita para centralizar opticamente).
+const TRI = { ax: 0.385, ay: 0.3, bx: 0.385, by: 0.7, cx: 0.77, cy: 0.5 };
 
 function insideTriangle(u, v) {
   const { ax, ay, bx, by, cx, cy } = TRI;
@@ -84,9 +92,21 @@ function insideTriangle(u, v) {
   return !(hasNeg && hasPos);
 }
 
+/** Cor de um subpixel dentro do quadrado: gradiente + brilho + sombra + play. */
+function samplePixel(u, v) {
+  if (insideTriangle(u, v)) return FG;
+  // Gradiente diagonal com leve brilho radial no topo.
+  let color = mix(GRAD_A, GRAD_B, (u + v) / 2);
+  const highlight = Math.max(0, 0.18 * (1 - v * 2.4));
+  if (highlight > 0) color = mix(color, FG, highlight);
+  // Sombra suave do play, deslocada para baixo.
+  if (insideTriangle(u, v - 0.035)) color = mix(color, [0, 0, 0], 0.22);
+  return color;
+}
+
 function renderIcon(size) {
   const rgba = Buffer.alloc(size * size * 4);
-  const samples = 3; // supersampling 3x3 para bordas suaves
+  const samples = 4; // supersampling 4x4 para bordas suaves
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       let r = 0;
@@ -98,7 +118,7 @@ function renderIcon(size) {
           const u = (x + (sx + 0.5) / samples) / size;
           const v = (y + (sy + 0.5) / samples) / size;
           if (!insideRoundedSquare(u, v)) continue;
-          const [pr, pg, pb] = insideTriangle(u, v) ? FG : BG;
+          const [pr, pg, pb] = samplePixel(u, v);
           r += pr;
           g += pg;
           b += pb;

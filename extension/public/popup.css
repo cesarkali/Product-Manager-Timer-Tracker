@@ -1,50 +1,54 @@
 /* ================================================================
    PMTT Timer — Popup  |  fonte: extension/public/popup.css
    Build copia este arquivo para dist/. EDITE AQUI, não em dist/.
+   Sem fontes externas: o popup abre instantâneo e nada depende da rede.
    ================================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 /* ── tokens escuro (padrão) ─────────────────────────────────── */
 :root {
-  --bg:         #0d1117;
-  --surface:    #161b22;
-  --surface2:   #1c2230;
-  --surface3:   #222a38;
-  --border:     #2d3748;
-  --border-s:   #1e2533;
-  --text:       #e2e8f0;
-  --text-2:     #a0aec0;
-  --accent:     #7c6ee0;
-  --accent-hl:  #9580f5;
-  --accent-dim: rgba(124,110,224,.15);
-  --ok:         #38a169;
-  --ok-dim:     rgba(56,161,105,.15);
-  --danger:     #e53e3e;
-  --danger-dim: rgba(229,62,62,.13);
-  --warn:       #d69e2e;
-  --r:          14px;
-  --r-sm:       8px;
-  --r-xs:       6px;
+  --bg:         #0b0e14;
+  --surface:    #12161f;
+  --surface2:   #1a1f2b;
+  --surface3:   #232937;
+  --border:     #2c3444;
+  --border-s:   #1d2330;
+  --text:       #e6eaf2;
+  --text-2:     #94a0b8;
+  --accent:     #8b7cf0;
+  --accent-hl:  #a394ff;
+  --accent-deep:#5b4bc4;
+  --accent-dim: rgba(139, 124, 240, .14);
+  --ok:         #34c98a;
+  --ok-dim:     rgba(52, 201, 138, .14);
+  --danger:     #f06a6a;
+  --danger-dim: rgba(240, 106, 106, .12);
+  --warn:       #e6b04c;
+  --shadow:     0 4px 24px rgba(0, 0, 0, .35);
+  --r:          16px;
+  --r-sm:       10px;
+  --r-xs:       7px;
 }
 
 /* ── tokens claro ────────────────────────────────────────────── */
 html.light {
-  --bg:         #f0f4f8;
+  --bg:         #eef1f7;
   --surface:    #ffffff;
-  --surface2:   #edf2f7;
-  --surface3:   #e2e8f0;
-  --border:     #cbd5e0;
-  --border-s:   #e2e8f0;
-  --text:       #1a202c;
-  --text-2:     #718096;
+  --surface2:   #f2f4fa;
+  --surface3:   #e7eaf3;
+  --border:     #d3d9e6;
+  --border-s:   #e5e9f2;
+  --text:       #1b2233;
+  --text-2:     #66718a;
   --accent:     #6b52d6;
   --accent-hl:  #7c63e8;
-  --accent-dim: rgba(107,82,214,.12);
-  --ok:         #276749;
-  --ok-dim:     rgba(39,103,73,.12);
-  --danger:     #c53030;
-  --danger-dim: rgba(197,48,48,.1);
+  --accent-deep:#5741b8;
+  --accent-dim: rgba(107, 82, 214, .1);
+  --ok:         #1e8e5f;
+  --ok-dim:     rgba(30, 142, 95, .12);
+  --danger:     #d14343;
+  --danger-dim: rgba(209, 67, 67, .09);
   --warn:       #b7791f;
+  --shadow:     0 4px 20px rgba(27, 34, 51, .08);
 }
 
 /* ── reset & base ────────────────────────────────────────────── */
@@ -55,7 +59,7 @@ body {
   height: 600px; /* Chrome popups têm tamanho máximo de 600x600 */
   margin: 0;
   overflow: hidden;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-size: 13px;
   line-height: 1.55;
   color: var(--text);
@@ -64,15 +68,12 @@ body {
 }
 
 /* scrollbar personalizado */
-::-webkit-scrollbar       { width: 5px; }
+::-webkit-scrollbar       { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-2); }
 
 /* ── layout raiz ─────────────────────────────────────────────── */
-/* Chrome popups limitam a janela em 600px de altura.
-   Ao definir 600px exatos, preenchemos o limite e deixamos 
-   apenas o .pmtt-body criar scroll internamente. */
 .pmtt-popup {
   display: flex;
   flex-direction: column;
@@ -85,8 +86,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: var(--surface);
+  padding: 12px 18px;
+  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 92%, var(--accent)));
   border-bottom: 1px solid var(--border-s);
   position: sticky;
   top: 0;
@@ -98,71 +99,82 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 15px;
   letter-spacing: -.02em;
   color: var(--text);
 }
 
 .pmtt-brand-dot {
-  width: 12px; height: 12px;
+  width: 11px; height: 11px;
   border-radius: 50%;
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent-hl), var(--accent-deep));
   box-shadow: 0 0 10px var(--accent);
   animation: pulse 2.6s ease-in-out infinite;
 }
 
 @keyframes pulse {
   0%, 100% { box-shadow: 0 0 8px var(--accent); opacity: 1; }
-  50%       { box-shadow: 0 0 20px var(--accent-hl); opacity: .85; }
+  50%       { box-shadow: 0 0 18px var(--accent-hl); opacity: .85; }
 }
 
-.pmtt-header-actions { display: flex; gap: 3px; align-items: center; }
+.pmtt-header-actions { display: flex; gap: 4px; align-items: center; }
 
 .pmtt-icon-btn {
   width: 32px; height: 32px;
   border: none; background: transparent; color: var(--text-2);
-  border-radius: var(--r-sm); cursor: pointer; font-size: 16px;
+  border-radius: var(--r-sm); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: background .15s, color .15s;
+  transition: background .15s, color .15s, transform .1s;
 }
-.pmtt-icon-btn:hover { background: var(--surface3); color: var(--text); }
+.pmtt-icon-btn:hover  { background: var(--surface3); color: var(--text); }
+.pmtt-icon-btn:active { transform: scale(.92); }
 
 /* ── body scrollável ─────────────────────────────────────────── */
 /* min-height: 0 é essencial para overflow-y:auto funcionar dentro
-   de um flex container com height:680px (sem ele flex ignora overflow) */
+   de um flex container com altura fixa (sem ele o flex ignora overflow) */
 .pmtt-body {
   flex: 1;
   min-height: 0;
-  padding: 16px;
+  padding: 16px 18px 18px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  scroll-behavior: smooth;
 }
 
-.pmtt-pad { padding: 20px 16px; }
+.pmtt-pad { padding: 20px 18px; }
 .pmtt-muted { color: var(--text-2); font-size: 12.5px; }
 
 .pmtt-empty {
-  padding: 28px 16px;
+  padding: 30px 16px;
   border: 1.5px dashed var(--border);
   border-radius: var(--r);
   color: var(--text-2);
   text-align: center;
   background: var(--surface);
+  animation: fadeIn .25s ease;
 }
 
 /* ── timer ativo ─────────────────────────────────────────────── */
 .pmtt-timer {
-  background: var(--surface);
+  background:
+    radial-gradient(120% 90% at 50% -20%, var(--accent-dim), transparent 60%),
+    var(--surface);
   border: 1px solid var(--border-s);
   border-radius: var(--r);
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  box-shadow: 0 2px 16px rgba(0,0,0,.12);
+  box-shadow: var(--shadow);
+  animation: fadeIn .25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .pmtt-timer-head {
@@ -187,26 +199,27 @@ body {
 .pmtt-paused-badge {
   font-size: 11px; font-weight: 600;
   color: var(--warn);
-  border: 1px solid var(--warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 55%, transparent);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
   border-radius: 999px;
-  padding: 1px 9px;
+  padding: 1px 10px;
 }
 
-/* rel\u00f3gio — cor s\u00f3lida + text-shadow para n\u00e3o depender de background-clip
-   (background-clip:text quebra com Dark Reader e algumas extens\u00f5es de tema) */
+/* relógio — cor sólida + text-shadow para não depender de background-clip
+   (background-clip:text quebra com Dark Reader e algumas extensões de tema) */
 .pmtt-clock {
-  font-size: 52px;
-  font-weight: 800;
+  font-size: 54px;
+  font-weight: 700;
   text-align: center;
-  letter-spacing: .02em;
+  letter-spacing: .01em;
   font-variant-numeric: tabular-nums;
   color: var(--text);
   text-shadow:
-    0 0 30px var(--accent-hl),
-    0 0 60px rgba(124,110,224,.3);
+    0 0 28px var(--accent-hl),
+    0 0 64px var(--accent-dim);
   line-height: 1.1;
-  padding: 6px 0;
-  transition: color .3s;
+  padding: 4px 0;
+  transition: color .3s, text-shadow .3s;
 }
 .pmtt-clock.is-paused {
   color: var(--text-2);
@@ -218,6 +231,10 @@ body {
 
 .pmtt-btn {
   flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding: 9px 14px;
   border: 1px solid var(--border);
   background: var(--surface2);
@@ -225,7 +242,7 @@ body {
   border-radius: var(--r-sm);
   font-size: 12.5px; font-weight: 600;
   font-family: inherit; cursor: pointer;
-  transition: border-color .15s, background .15s, transform .1s;
+  transition: border-color .15s, background .15s, transform .1s, box-shadow .15s;
 }
 .pmtt-btn:hover:not(:disabled) {
   border-color: var(--accent);
@@ -235,13 +252,15 @@ body {
 .pmtt-btn:disabled { opacity: .4; cursor: default; }
 
 .pmtt-btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: linear-gradient(180deg, var(--accent), var(--accent-deep));
+  border-color: transparent;
   color: #fff;
+  box-shadow: 0 2px 10px var(--accent-dim);
 }
 .pmtt-btn-primary:hover:not(:disabled) {
-  background: var(--accent-hl);
-  border-color: var(--accent-hl);
+  background: linear-gradient(180deg, var(--accent-hl), var(--accent));
+  border-color: transparent;
+  box-shadow: 0 3px 14px var(--accent-dim);
 }
 
 .pmtt-btn-danger { color: var(--danger); border-color: var(--border); }
@@ -249,6 +268,13 @@ body {
 .pmtt-btn-danger.is-confirm {
   background: var(--danger-dim);
   border-color: var(--danger);
+  animation: shake .3s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-3px); }
+  75%      { transform: translateX(3px); }
 }
 
 /* ── campos ──────────────────────────────────────────────────── */
@@ -315,6 +341,7 @@ body {
   border-radius: var(--r-sm);
   padding: 8px 11px;
   transition: border-color .15s;
+  animation: fadeIn .2s ease;
 }
 .pmtt-task-row:hover { border-color: var(--border); }
 
@@ -325,8 +352,11 @@ body {
   padding: 2px 7px;
   flex-shrink: 0;
 }
-.pmtt-task-type.is-jira     { background: rgba(59,130,246,.2); color: #60a5fa; }
-.pmtt-task-type.is-movidesk { background: rgba(16,185,129,.2); color: #34d399; }
+.pmtt-task-type.is-jira     { background: rgba(59, 130, 246, .18); color: #60a5fa; }
+.pmtt-task-type.is-movidesk { background: rgba(16, 185, 129, .18); color: #34d399; }
+.pmtt-task-type.is-link     { background: rgba(139, 124, 240, .18); color: #a394ff; }
+html.light .pmtt-task-type.is-jira     { color: #2563eb; }
+html.light .pmtt-task-type.is-movidesk { color: #047857; }
 
 .pmtt-task-ref {
   flex: 1; min-width: 0;
@@ -343,14 +373,14 @@ body {
 .pmtt-task-remove {
   width: 24px; height: 24px; border-radius: var(--r-xs);
   border: none; background: transparent; color: var(--text-2);
-  cursor: pointer; font-size: 14px;
+  cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background .15s, color .15s;
   flex-shrink: 0;
 }
 .pmtt-task-remove:hover { background: var(--danger-dim); color: var(--danger); }
 
-/* grid add: tipo | input | SP | 🔗 | + */
+/* grid add: tipo | input | SP | link | + */
 .pmtt-task-add {
   display: grid;
   grid-template-columns: 92px 1fr 60px 34px 34px;
@@ -362,7 +392,7 @@ body {
   width: 34px; height: 34px;
   border: 1px solid var(--border);
   background: var(--surface2); color: var(--text-2);
-  border-radius: var(--r-sm); cursor: pointer; font-size: 15px;
+  border-radius: var(--r-sm); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: border-color .15s, color .15s;
 }
@@ -373,10 +403,9 @@ body {
   width: 34px; height: 34px;
   border: 1px solid var(--accent);
   background: var(--accent-dim); color: var(--accent);
-  border-radius: var(--r-sm); cursor: pointer; font-size: 18px;
+  border-radius: var(--r-sm); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 700;
-  transition: background .15s;
+  transition: background .15s, color .15s;
 }
 .pmtt-add-btn:hover:not(:disabled) { background: var(--accent); color: #fff; }
 .pmtt-add-btn:disabled { opacity: .4; cursor: default; }
@@ -384,7 +413,7 @@ body {
 /* ── card Jira ────────────────────────────────────────────────── */
 .pmtt-jira-card {
   background: linear-gradient(135deg, var(--accent-dim), var(--surface));
-  border: 1px solid rgba(124,110,224,.35);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
   border-radius: var(--r);
   padding: 14px 16px;
   display: flex; flex-direction: column; gap: 10px;
@@ -396,7 +425,8 @@ body {
 
 .pmtt-jira-badge-big {
   font-size: 11px; font-weight: 700;
-  background: var(--accent); color: #fff;
+  background: linear-gradient(180deg, var(--accent), var(--accent-deep));
+  color: #fff;
   border-radius: var(--r-xs); padding: 3px 9px;
   text-transform: uppercase; letter-spacing: .05em;
   flex-shrink: 0;
@@ -438,29 +468,57 @@ body {
 /* ── grade de categorias ─────────────────────────────────────── */
 .pmtt-section { display: flex; flex-direction: column; gap: 10px; }
 
+.pmtt-section-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+
 .pmtt-section-title {
   font-size: 11px; font-weight: 700;
   text-transform: uppercase; letter-spacing: .08em;
   color: var(--text-2);
 }
 
+.pmtt-cat-filter {
+  width: 200px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  padding: 5px 14px;
+  font-size: 12px;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s, width .2s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.pmtt-cat-filter:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+  width: 240px;
+}
+.pmtt-cat-filter::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+/* Duas colunas com nome em até 2 linhas: legível mesmo com muitas categorias. */
 .pmtt-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 7px;
 }
 
 .pmtt-grid-item {
   display: flex; align-items: center; gap: 9px;
   background: var(--surface); border: 1px solid var(--border-s);
-  border-radius: var(--r-sm); padding: 10px 12px;
+  border-radius: var(--r-sm); padding: 9px 12px;
   color: var(--text); cursor: pointer; text-align: left; min-width: 0;
+  font-family: inherit;
   transition: border-color .15s, background .15s, box-shadow .15s, transform .1s;
 }
 .pmtt-grid-item:hover:not(:disabled) {
   border-color: var(--accent);
   background: var(--accent-dim);
   box-shadow: 0 0 0 2px var(--accent-dim);
+  transform: translateY(-1px);
 }
 .pmtt-grid-item:active:not(:disabled) { transform: scale(.97); }
 .pmtt-grid-item.is-current {
@@ -474,8 +532,11 @@ body {
 
 .pmtt-grid-name {
   flex: 1; min-width: 0;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font-size: 12.5px; font-weight: 500;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 12.5px; font-weight: 500; line-height: 1.35;
 }
 
 .pmtt-grid-key {
@@ -487,27 +548,273 @@ body {
 /* ── login ───────────────────────────────────────────────────── */
 .pmtt-login {
   display: flex; flex-direction: column; gap: 14px;
-  padding: 24px 16px;
+  padding: 24px 18px;
+  max-width: 380px;
+  margin: 0 auto;
+  width: 100%;
+  animation: fadeIn .3s ease;
 }
 .pmtt-login-title {
-  font-size: 18px; font-weight: 800; letter-spacing: -.02em;
+  font-size: 18px; font-weight: 700; letter-spacing: -.02em;
 }
 .pmtt-login-hint { color: var(--text-2); font-size: 13px; }
 .pmtt-error { color: var(--danger); font-size: 12.5px; }
+.pmtt-notice {
+  color: var(--ok); font-size: 12px;
+  background: var(--ok-dim);
+  border: 1px solid color-mix(in srgb, var(--ok) 40%, transparent);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+}
+
+.pmtt-login-tabs {
+  display: grid; grid-template-columns: 1fr 1fr;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 3px; gap: 3px;
+}
+.pmtt-login-tab {
+  border: none; background: transparent; color: var(--text-2);
+  border-radius: var(--r-xs);
+  padding: 7px 0; font-size: 12.5px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.pmtt-login-tab.is-active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .25);
+}
+
+.pmtt-login-password-row {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.pmtt-login-link {
+  border: none; background: transparent; color: var(--text-2);
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  text-transform: none; letter-spacing: 0; font-weight: 500;
+  text-decoration: underline; text-underline-offset: 2px;
+  transition: color .15s;
+}
+.pmtt-login-link:hover { color: var(--accent); }
+
+.pmtt-login-footer {
+  color: var(--text-2); font-size: 12px; text-align: center;
+  border-top: 1px solid var(--border-s);
+  padding-top: 12px; margin-top: 2px;
+}
+.pmtt-login-footer a { color: var(--accent); text-decoration: none; }
+.pmtt-login-footer a:hover { text-decoration: underline; }
+
+.pmtt-login-appear { animation: fadeIn .25s ease; }
 
 /* ── toast ───────────────────────────────────────────────────── */
 .pmtt-toast {
-  position: fixed; left: 14px; right: 14px; bottom: 14px;
+  position: fixed; left: 16px; right: 16px; bottom: 16px;
   padding: 10px 16px; border-radius: var(--r-sm);
   font-size: 12.5px; font-weight: 500; text-align: center; z-index: 99;
   border: 1px solid var(--border); background: var(--surface2);
-  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .4);
+  backdrop-filter: blur(6px);
   animation: slideUp .2s ease;
 }
-.pmtt-toast.is-ok { border-color: var(--ok); color: var(--ok); }
+.pmtt-toast.is-ok    { border-color: var(--ok); color: var(--ok); }
 .pmtt-toast.is-error { border-color: var(--danger); color: var(--danger); }
 
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Skins (gerado por gen-ext-skins) ── */
+html[data-skin="oceano"] {
+  --bg: oklch(0.16 0.033 250);
+  --surface: oklch(0.205 0.04 250);
+  --surface2: oklch(0.265 0.045 250);
+  --surface3: oklch(0.3 0.05 250);
+  --border: oklch(0.9 0.045 250 / 16%);
+  --border-s: oklch(0.9 0.045 250 / 10%);
+  --text-2: oklch(0.73 0.025 250);
+  --accent: oklch(0.66 0.15 250);
+  --accent-hl: oklch(0.74 0.13 250);
+  --accent-deep: oklch(0.51 0.15 250);
+  --accent-dim: oklch(0.66 0.15 250 / .14);
+}
+html.light[data-skin="oceano"] {
+  --bg: oklch(0.965 0.012 250);
+  --surface: #ffffff;
+  --surface2: oklch(0.945 0.015 250);
+  --surface3: oklch(0.915 0.02 250);
+  --border: oklch(0.87 0.025 250);
+  --border-s: oklch(0.93 0.015 250);
+  --text-2: oklch(0.5 0.03 250);
+  --accent: oklch(0.53 0.16 250);
+  --accent-hl: oklch(0.6 0.15 250);
+  --accent-deep: oklch(0.45 0.15 250);
+  --accent-dim: oklch(0.53 0.15 250 / .12);
+}
+
+html[data-skin="ciano"] {
+  --bg: oklch(0.16 0.033 213);
+  --surface: oklch(0.205 0.04 213);
+  --surface2: oklch(0.265 0.045 213);
+  --surface3: oklch(0.3 0.05 213);
+  --border: oklch(0.9 0.045 213 / 16%);
+  --border-s: oklch(0.9 0.045 213 / 10%);
+  --text-2: oklch(0.73 0.025 213);
+  --accent: oklch(0.73 0.12 213);
+  --accent-hl: oklch(0.8099999999999999 0.09999999999999999 213);
+  --accent-deep: oklch(0.58 0.12 213);
+  --accent-dim: oklch(0.73 0.12 213 / .14);
+}
+html.light[data-skin="ciano"] {
+  --bg: oklch(0.965 0.012 213);
+  --surface: #ffffff;
+  --surface2: oklch(0.945 0.015 213);
+  --surface3: oklch(0.915 0.02 213);
+  --border: oklch(0.87 0.025 213);
+  --border-s: oklch(0.93 0.015 213);
+  --text-2: oklch(0.5 0.03 213);
+  --accent: oklch(0.53 0.13 213);
+  --accent-hl: oklch(0.6 0.12 213);
+  --accent-deep: oklch(0.45 0.12 213);
+  --accent-dim: oklch(0.53 0.12 213 / .12);
+}
+
+html[data-skin="esmeralda"] {
+  --bg: oklch(0.16 0.033 168);
+  --surface: oklch(0.205 0.04 168);
+  --surface2: oklch(0.265 0.045 168);
+  --surface3: oklch(0.3 0.05 168);
+  --border: oklch(0.9 0.045 168 / 16%);
+  --border-s: oklch(0.9 0.045 168 / 10%);
+  --text-2: oklch(0.73 0.025 168);
+  --accent: oklch(0.7 0.13 168);
+  --accent-hl: oklch(0.7799999999999999 0.11 168);
+  --accent-deep: oklch(0.5499999999999999 0.13 168);
+  --accent-dim: oklch(0.7 0.13 168 / .14);
+}
+html.light[data-skin="esmeralda"] {
+  --bg: oklch(0.965 0.012 168);
+  --surface: #ffffff;
+  --surface2: oklch(0.945 0.015 168);
+  --surface3: oklch(0.915 0.02 168);
+  --border: oklch(0.87 0.025 168);
+  --border-s: oklch(0.93 0.015 168);
+  --text-2: oklch(0.5 0.03 168);
+  --accent: oklch(0.53 0.14 168);
+  --accent-hl: oklch(0.6 0.13 168);
+  --accent-deep: oklch(0.45 0.13 168);
+  --accent-dim: oklch(0.53 0.13 168 / .12);
+}
+
+html[data-skin="ambar"] {
+  --bg: oklch(0.16 0.033 80);
+  --surface: oklch(0.205 0.04 80);
+  --surface2: oklch(0.265 0.045 80);
+  --surface3: oklch(0.3 0.05 80);
+  --border: oklch(0.9 0.045 80 / 16%);
+  --border-s: oklch(0.9 0.045 80 / 10%);
+  --text-2: oklch(0.73 0.025 80);
+  --accent: oklch(0.78 0.13 80);
+  --accent-hl: oklch(0.85 0.11 80);
+  --accent-deep: oklch(0.63 0.13 80);
+  --accent-dim: oklch(0.78 0.13 80 / .14);
+}
+html.light[data-skin="ambar"] {
+  --bg: oklch(0.965 0.012 80);
+  --surface: #ffffff;
+  --surface2: oklch(0.945 0.015 80);
+  --surface3: oklch(0.915 0.02 80);
+  --border: oklch(0.87 0.025 80);
+  --border-s: oklch(0.93 0.015 80);
+  --text-2: oklch(0.5 0.03 80);
+  --accent: oklch(0.53 0.14 80);
+  --accent-hl: oklch(0.6 0.13 80);
+  --accent-deep: oklch(0.45 0.13 80);
+  --accent-dim: oklch(0.53 0.13 80 / .12);
+}
+
+html[data-skin="rosa"] {
+  --bg: oklch(0.16 0.033 350);
+  --surface: oklch(0.205 0.04 350);
+  --surface2: oklch(0.265 0.045 350);
+  --surface3: oklch(0.3 0.05 350);
+  --border: oklch(0.9 0.045 350 / 16%);
+  --border-s: oklch(0.9 0.045 350 / 10%);
+  --text-2: oklch(0.73 0.025 350);
+  --accent: oklch(0.7 0.16 350);
+  --accent-hl: oklch(0.7799999999999999 0.14 350);
+  --accent-deep: oklch(0.5499999999999999 0.16 350);
+  --accent-dim: oklch(0.7 0.16 350 / .14);
+}
+html.light[data-skin="rosa"] {
+  --bg: oklch(0.965 0.012 350);
+  --surface: #ffffff;
+  --surface2: oklch(0.945 0.015 350);
+  --surface3: oklch(0.915 0.02 350);
+  --border: oklch(0.87 0.025 350);
+  --border-s: oklch(0.93 0.015 350);
+  --text-2: oklch(0.5 0.03 350);
+  --accent: oklch(0.53 0.17 350);
+  --accent-hl: oklch(0.6 0.16 350);
+  --accent-deep: oklch(0.45 0.16 350);
+  --accent-dim: oklch(0.53 0.16 350 / .12);
+}
+
+html[data-skin="vermelho"] {
+  --bg: oklch(0.16 0.033 25);
+  --surface: oklch(0.205 0.04 25);
+  --surface2: oklch(0.265 0.045 25);
+  --surface3: oklch(0.3 0.05 25);
+  --border: oklch(0.9 0.045 25 / 16%);
+  --border-s: oklch(0.9 0.045 25 / 10%);
+  --text-2: oklch(0.73 0.025 25);
+  --accent: oklch(0.66 0.18 25);
+  --accent-hl: oklch(0.74 0.16 25);
+  --accent-deep: oklch(0.51 0.18 25);
+  --accent-dim: oklch(0.66 0.18 25 / .14);
+}
+html.light[data-skin="vermelho"] {
+  --bg: oklch(0.965 0.012 25);
+  --surface: #ffffff;
+  --surface2: oklch(0.945 0.015 25);
+  --surface3: oklch(0.915 0.02 25);
+  --border: oklch(0.87 0.025 25);
+  --border-s: oklch(0.93 0.015 25);
+  --text-2: oklch(0.5 0.03 25);
+  --accent: oklch(0.53 0.19 25);
+  --accent-hl: oklch(0.6 0.18 25);
+  --accent-deep: oklch(0.45 0.18 25);
+  --accent-dim: oklch(0.53 0.18 25 / .12);
+}
+
+html[data-skin="meia-noite"] {
+  --bg: oklch(0.11 0.012 282);
+  --surface: oklch(0.15 0.016 282);
+  --surface2: oklch(0.2 0.02 283);
+  --surface3: oklch(0.24 0.024 283);
+  --border: oklch(0.9 0.03 286 / 12%);
+  --border-s: oklch(0.9 0.03 286 / 8%);
+}
+html[data-skin="grafite"] {
+  --bg: oklch(0.15 0 0);
+  --surface: oklch(0.19 0 0);
+  --surface2: oklch(0.25 0 0);
+  --surface3: oklch(0.29 0 0);
+  --border: oklch(1 0 0 / 14%);
+  --border-s: oklch(1 0 0 / 9%);
+  --text-2: oklch(0.7 0 0);
+  --accent: oklch(0.62 0 0);
+  --accent-hl: oklch(0.72 0 0);
+  --accent-deep: oklch(0.45 0 0);
+  --accent-dim: oklch(0.62 0 0 / .16);
+}
+html.light[data-skin="grafite"] {
+  --accent: oklch(0.4 0 0);
+  --accent-hl: oklch(0.5 0 0);
+  --accent-deep: oklch(0.3 0 0);
+  --accent-dim: oklch(0.4 0 0 / .12);
+}
+/* ── fim skins ── */

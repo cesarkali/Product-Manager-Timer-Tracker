@@ -6,7 +6,7 @@
 // app web) e injetada nos bundles — a extensão sempre aponta para o mesmo
 // ambiente (produção/homolog) que estiver ativo no .env.
 import esbuild from "esbuild";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { generateIcons } from "./scripts/make-icons.mjs";
@@ -57,6 +57,8 @@ for (const key of FIREBASE_KEYS) {
 }
 
 function copyStatic() {
+  // Limpa o dist para não sobrar artefato de builds antigos (ex.: content.js).
+  rmSync(distDir, { recursive: true, force: true });
   mkdirSync(distDir, { recursive: true });
   copyFileSync(path.join(extDir, "manifest.json"), path.join(distDir, "manifest.json"));
   const publicDir = path.join(extDir, "public");
@@ -71,7 +73,6 @@ const buildOptions = {
     background: path.join(extDir, "src", "background", "index.ts"),
     popup: path.join(extDir, "src", "popup", "index.tsx"),
     options: path.join(extDir, "src", "options", "index.tsx"),
-    content: path.join(extDir, "src", "content", "index.tsx"),
   },
   bundle: true,
   outdir: distDir,

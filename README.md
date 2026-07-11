@@ -99,8 +99,39 @@ justificar prioridades, carga de trabalho ou pedidos como um aumento.
   dos KPIs animados, glow pulsante no cronômetro rodando — tudo CSS-first (sem lib de
   animação JS), desligado automaticamente na impressão e para quem prefere menos
   movimento (`prefers-reduced-motion`).
-- **Acesso individual**: uso pessoal, um único login por vez, sem tela de cadastro
-  público — os usuários são criados manualmente no console do Firebase.
+- **Contas abertas**: cadastro por e-mail/senha ou Google direto na tela de login, com
+  recuperação de senha. No primeiro acesso, um **tour guiado** (balões apontando cada
+  função na tela) apresenta o sistema e recolhe o aceite dos **Termos de Uso e
+  Privacidade** (checkbox obrigatório; termos legíveis sem sair do fluxo e em
+  `/privacidade`). O tour pode ser refeito em Configurações → Preferências.
+- **Novidades de versão**: botão "Novidades" na sidebar com badge pulsante quando há
+  versão nova (`src/lib/changelog.ts` guarda o histórico; subir `APP_VERSION` +
+  adicionar entrada no topo mostra o aviso a todos).
+- **Temas e layout**: 11 temas completos (fundo, cards, sidebar e destaques —
+  incluindo Meia-noite e dois temas claros), densidade (confortável/compacto) e raio
+  dos cantos (reto/padrão/redondo), tudo por dispositivo em Configurações →
+  Preferências → Aparência.
+- **Atividade e restauração**: página "Atividade" no menu registra criações, edições e
+  exclusões de registros/categorias/áreas; exclusões guardam o snapshot do documento e
+  podem ser **restauradas com o mesmo id** (registros antigos voltam a resolver a
+  categoria).
+- **Tasks genéricas**: além de Jira e Movidesk, o tipo "Link" vincula tasks de qualquer
+  ferramenta ao registro.
+- **Zona de perigo**: exclusão da própria conta com confirmação dupla (digitar EXCLUIR +
+  reautenticação), apagando todos os dados do usuário; o e-mail entra em cooldown de
+  24h antes de poder criar conta nova.
+
+## Extensão do Chrome
+
+O PMTT Timer também existe como extensão
+([Chrome Web Store](https://chromewebstore.google.com/detail/honniaakfdobdmepkhoobbamggpbconf)):
+cronômetro no ícone do navegador (badge com o tempo decorrido), popup com categorias e
+atalhos 1–9, captura de ticket/issue pela URL da aba ativa, sugestões de categoria por
+domínio (notificações educadas, com cooldown e "silenciar por hoje") e os mesmos temas
+do app. O código vive em [`extension/`](extension/INSTALL.md); `npm run ext:build` gera
+o pacote em `extension/dist`, e `node extension/scripts/make-screenshots.mjs` gera as
+artes da loja. O botão de instalação também aparece no app em Configurações →
+Preferências.
 
 ## Stack
 
@@ -133,8 +164,9 @@ corrigidos, em [`.docs/plano-gestao-tempo.md`](.docs/plano-gestao-tempo.md).
    ```
 5. Abrir [http://localhost:3000](http://localhost:3000).
 
-Não existe tela de cadastro público — os usuários são criados manualmente no console do
-Firebase (Authentication → Users → Add user).
+O cadastro é aberto na própria tela de login (e-mail/senha ou Google). Para o login
+Google funcionar, habilite o provedor **Google** em Authentication → Sign-in method no
+console do Firebase.
 
 ## Firestore
 
@@ -160,4 +192,7 @@ domínio próprio `pmtt.caliberda.com.br`. Ao importar o repositório na Vercel:
 - `npm run dev` — servidor de desenvolvimento
 - `npm run build` — build de produção
 - `npm run start` — roda o build de produção
+- `npm run ext:build` — build da extensão do Chrome em `extension/dist`
+- `npm run ext:watch` — rebuild automático da extensão ao salvar
+- `node extension/scripts/make-screenshots.mjs` — artes da Chrome Web Store (1280×800)
 - `npm run lint` — ESLint

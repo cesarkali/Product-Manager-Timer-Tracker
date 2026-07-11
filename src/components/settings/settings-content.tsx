@@ -31,7 +31,7 @@ export function SettingsContent() {
         description="Categorias de atividade e preferências de uso."
       />
       <Tabs value={tab} onValueChange={(value) => setTab(value as SettingsTab)}>
-        <TabsList>
+        <TabsList data-tour="settings-tabs">
           <TabsTrigger value="categorias" className="px-4">
             Categorias
           </TabsTrigger>

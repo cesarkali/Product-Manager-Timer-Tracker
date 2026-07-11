@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   addDoc,
   collection,
   deleteDoc,
   doc,
+  getDoc,
   onSnapshot,
-  runTransaction,
   serverTimestamp,
   updateDoc,
   writeBatch,
@@ -16,62 +16,27 @@ import { db } from "@/lib/firebase/client";
 import type { ActionType } from "@/lib/types";
 import { useAuth } from "@/hooks/use-auth";
 import { DEFAULT_ACTION_TYPES } from "@/lib/default-action-types";
+import { voidLog } from "@/lib/activity-log";
 
-async function seedDefaultActionTypes(uid: string) {
-  const userRef = doc(db, "users", uid);
-
-  // Trava no doc do usuário: evita que múltiplos listeners/montagens
-  // disparando a checagem em paralelo criem o mesmo lote de categorias mais
-  // de uma vez. Importante: só é marcada como concluída DEPOIS que o
-  // batch.commit() das categorias tiver sucesso — se marcássemos antes e o
-  // commit falhasse (ex.: por um erro transitório), o usuário ficaria travado
-  // permanentemente sem categorias, já que a trava indicaria "já semeado".
-  const shouldSeed = await runTransaction(db, async (transaction) => {
-    const snap = await transaction.get(userRef);
-    return !(snap.exists() && snap.data().hasSeededActionTypes);
-  });
-  if (!shouldSeed) return;
-
-  const ref = collection(db, "users", uid, "actionTypes");
-  const batch = writeBatch(db);
-  DEFAULT_ACTION_TYPES.forEach(({ name, icon, colorTag }, index) => {
-    const docRef = doc(ref);
-    batch.set(docRef, {
-      name,
-      icon,
-      colorTag,
-      archived: false,
-      order: index,
-      createdAt: serverTimestamp(),
-    });
-  });
-  await batch.commit();
-
-  await updateDoc(userRef, { hasSeededActionTypes: true });
-}
+// Não há mais seed automático de categorias: várias montagens simultâneas do
+// hook viam a coleção vazia ao mesmo tempo e duplicavam o lote (a "trava" via
+// transação só lia o flag, não o gravava). As categorias padrão agora só são
+// criadas por ação explícita do usuário — botão em Configurações ou no wizard
+// de boas-vindas — via restoreDefaultActionTypes, que é idempotente por nome.
 
 export function useActionTypes() {
   const { user } = useAuth();
   const [actionTypes, setActionTypes] = useState<ActionType[]>([]);
   const [loading, setLoading] = useState(true);
-  const hasCheckedSeedRef = useRef(false);
 
   useEffect(() => {
     if (!user) return;
-    hasCheckedSeedRef.current = false;
     const ref = collection(db, "users", user.uid, "actionTypes");
     const unsubscribe = onSnapshot(ref, (snapshot) => {
       const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as ActionType);
       items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name, "pt-BR"));
       setActionTypes(items);
       setLoading(false);
-
-      if (!hasCheckedSeedRef.current) {
-        hasCheckedSeedRef.current = true;
-        if (snapshot.empty) {
-          void seedDefaultActionTypes(user.uid);
-        }
-      }
     });
     return unsubscribe;
   }, [user]);
@@ -93,7 +58,7 @@ export function useActionTypes() {
     const maxOrder = actionTypes.reduce((max, a) => Math.max(max, a.order ?? 0), -1);
     const hasConflict =
       shortcutKey != null && actionTypes.some((a) => a.shortcutKey === shortcutKey);
-    await addDoc(ref, {
+    const created = await addDoc(ref, {
       name,
       icon,
       colorTag: colorTag ?? String(actionTypes.length % 8),
@@ -102,21 +67,50 @@ export function useActionTypes() {
       shortcutKey: hasConflict ? null : (shortcutKey ?? null),
       createdAt: serverTimestamp(),
     });
+    voidLog(db, user.uid, {
+      action: "create",
+      entity: "actionType",
+      entityId: created.id,
+      label: name,
+    });
+  }
+
+  /** Loga uma edição de categoria usando o nome atual conhecido em memória. */
+  function logTypeUpdate(id: string, detail: string) {
+    if (!user) return;
+    const current = actionTypes.find((a) => a.id === id);
+    voidLog(db, user.uid, {
+      action: "update",
+      entity: "actionType",
+      entityId: id,
+      label: current?.name ?? "Categoria",
+      detail,
+    });
   }
 
   async function renameActionType(id: string, name: string) {
     if (!user) return;
+    const previous = actionTypes.find((a) => a.id === id)?.name;
     await updateDoc(doc(db, "users", user.uid, "actionTypes", id), { name });
+    voidLog(db, user.uid, {
+      action: "update",
+      entity: "actionType",
+      entityId: id,
+      label: name,
+      detail: previous ? `Renomeada de "${previous}"` : "Renomeada",
+    });
   }
 
   async function setActionTypeIcon(id: string, icon: string) {
     if (!user) return;
     await updateDoc(doc(db, "users", user.uid, "actionTypes", id), { icon });
+    logTypeUpdate(id, "Ícone alterado");
   }
 
   async function setActionTypeColor(id: string, colorTag: string) {
     if (!user) return;
     await updateDoc(doc(db, "users", user.uid, "actionTypes", id), { colorTag });
+    logTypeUpdate(id, "Cor alterada");
   }
 
   /**
@@ -132,17 +126,20 @@ export function useActionTypes() {
       if (conflict) return;
     }
     await updateDoc(doc(db, "users", user.uid, "actionTypes", id), { shortcutKey });
+    logTypeUpdate(id, shortcutKey != null ? `Atalho ${shortcutKey}` : "Atalho removido");
   }
 
   /** Define a área de negócio da categoria (nome de uma BusinessArea ou null). */
   async function setActionTypeArea(id: string, area: string | null) {
     if (!user) return;
     await updateDoc(doc(db, "users", user.uid, "actionTypes", id), { area });
+    logTypeUpdate(id, area ? `Área: ${area}` : "Área removida");
   }
 
   async function setArchived(id: string, archived: boolean) {
     if (!user) return;
     await updateDoc(doc(db, "users", user.uid, "actionTypes", id), { archived });
+    logTypeUpdate(id, archived ? "Arquivada" : "Reativada");
   }
 
   /** Grava a nova ordem completa (ex.: após um drag-and-drop na tabela). */
@@ -157,14 +154,27 @@ export function useActionTypes() {
 
   async function deleteActionType(id: string) {
     if (!user) return;
-    await deleteDoc(doc(db, "users", user.uid, "actionTypes", id));
+    const ref = doc(db, "users", user.uid, "actionTypes", id);
+    // Snapshot ANTES de apagar — restauração recria com o MESMO id, então os
+    // registros antigos que apontam para a categoria voltam a resolver.
+    const snap = await getDoc(ref);
+    await deleteDoc(ref);
+    if (snap.exists()) {
+      const data = snap.data();
+      voidLog(db, user.uid, {
+        action: "delete",
+        entity: "actionType",
+        entityId: id,
+        label: (data.name as string) ?? "Categoria",
+        snapshot: data,
+      });
+    }
   }
 
   /**
-   * Cria as categorias padrão que ainda não existem (por nome), ignorando a
-   * trava de seed automático. Útil para contas que ficaram sem categorias por
-   * causa do bug de corrida do seed automático (trava marcada sem o commit
-   * ter sido concluído).
+   * Cria as categorias padrão que ainda não existem (por nome) — idempotente:
+   * chamar duas vezes não duplica nada. É o único caminho para gerar as
+   * categorias padrão (botão em Configurações e no wizard de boas-vindas).
    */
   async function restoreDefaultActionTypes() {
     if (!user) return;

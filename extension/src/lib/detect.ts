@@ -1,6 +1,6 @@
-// Detecção do ticket/issue aberto a partir da URL da página — propositalmente
+// Detecção do ticket/issue aberto a partir da URL da aba ativa — propositalmente
 // independente do HTML do Movidesk/Jira (seletores de DOM quebram quando eles
-// mudam o layout; a URL é estável). O widget sempre deixa a referência
+// mudam o layout; a URL é estável). O popup sempre deixa a referência
 // editável, então a detecção é uma conveniência, não uma dependência.
 import type { LinkedTask } from "@/lib/types";
 

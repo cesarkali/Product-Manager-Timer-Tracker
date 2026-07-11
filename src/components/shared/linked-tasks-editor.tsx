@@ -10,12 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { STORY_POINT_OPTIONS, type LinkedTask } from "@/lib/types";
-
-const TASK_TYPE_LABEL: Record<LinkedTask["type"], string> = {
-  jira: "Jira",
-  movidesk: "Movidesk",
-};
+import { STORY_POINT_OPTIONS, TASK_TYPE_LABELS, type LinkedTask } from "@/lib/types";
 
 export function LinkedTasksEditor({
   items,
@@ -40,9 +35,9 @@ export function LinkedTasksEditor({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {(Object.keys(TASK_TYPE_LABEL) as LinkedTask["type"][]).map((type) => (
+              {(Object.keys(TASK_TYPE_LABELS) as LinkedTask["type"][]).map((type) => (
                 <SelectItem key={type} value={type}>
-                  {TASK_TYPE_LABEL[type]}
+                  {TASK_TYPE_LABELS[type]}
                 </SelectItem>
               ))}
             </SelectContent>
