@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "PMTT Timer",
   "version": "0.2.0",
-  "description": "Controle seu timer do PMTT direto do navegador: categorias com atalhos, tasks e links das suas ferramentas e sugestões automáticas de categoria.",
+  "description": "Controle o timer do PMTT no navegador: atalhos, vínculo de tasks e links, e sugestões automáticas de categorias.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",

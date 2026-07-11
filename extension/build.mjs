@@ -1,19 +1,32 @@
 // Build da extensão Chrome do PMTT (esbuild). Uso:
-//   npm run ext:build          → build único em extension/dist
-//   npm run ext:watch          → rebuild automático ao salvar
+//   npm run ext:build          → build único em extension/dist + ZIP em extension/releases
+//   npm run ext:watch          → rebuild automático ao salvar (sem ZIP)
 //
 // A configuração do Firebase é lida do .env da raiz (mesmos NEXT_PUBLIC_* do
 // app web) e injetada nos bundles — a extensão sempre aponta para o mesmo
 // ambiente (produção/homolog) que estiver ativo no .env.
 import esbuild from "esbuild";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import {
+  copyFileSync,
+  createWriteStream,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+} from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 import { generateIcons } from "./scripts/make-icons.mjs";
+
+const require = createRequire(import.meta.url);
+const AdmZip = require("adm-zip");
 
 const extDir = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(extDir, "..");
 const distDir = path.join(extDir, "dist");
+const releasesDir = path.join(extDir, "releases");
 const watch = process.argv.includes("--watch");
 
 function parseEnvFile(file) {
@@ -68,6 +81,24 @@ function copyStatic() {
   generateIcons(path.join(distDir, "icons"));
 }
 
+/** Cria o ZIP da pasta dist/ em releases/pmtt-timer-v{versão}.zip.
+ * O arquivo fica na raiz do ZIP (sem pasta dist/ dentro), exatamente
+ * como o Google Web Store espera. */
+async function createZip() {
+  const manifest = JSON.parse(readFileSync(path.join(distDir, "manifest.json"), "utf8"));
+  const version = manifest.version ?? "0.0.0";
+  const zipName = `pmtt-timer-v${version}.zip`;
+
+  mkdirSync(releasesDir, { recursive: true });
+  const zipPath = path.join(releasesDir, zipName);
+
+  const zip = new AdmZip();
+  // Adiciona a pasta dist/ com conteúdo na raiz do ZIP
+  zip.addLocalFolder(distDir, "");
+  zip.writeZip(zipPath);
+  console.log(`📦 ZIP gerado: releases/${zipName}`);
+}
+
 const buildOptions = {
   entryPoints: {
     background: path.join(extDir, "src", "background", "index.ts"),
@@ -96,4 +127,5 @@ if (watch) {
 } else {
   await esbuild.build(buildOptions);
   console.log(`Extensão pronta em ${distDir}`);
+  await createZip();
 }
