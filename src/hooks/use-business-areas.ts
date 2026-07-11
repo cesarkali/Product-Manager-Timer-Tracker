@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   addDoc,
   collection,
@@ -8,7 +8,6 @@ import {
   getDocs,
   onSnapshot,
   query,
-  runTransaction,
   serverTimestamp,
   updateDoc,
   where,
@@ -18,57 +17,25 @@ import { db } from "@/lib/firebase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { DEFAULT_BUSINESS_AREAS } from "@/lib/default-business-areas";
 import type { BusinessArea } from "@/lib/types";
+import { stripId, voidLog } from "@/lib/activity-log";
 
-async function seedDefaultBusinessAreas(uid: string) {
-  const userRef = doc(db, "users", uid);
-
-  // Mesma trava (via transação) do seed de categorias — evita duplicar o lote
-  // se a checagem disparar em paralelo por mais de um listener/montagem.
-  const shouldSeed = await runTransaction(db, async (transaction) => {
-    const snap = await transaction.get(userRef);
-    return !(snap.exists() && snap.data().hasSeededBusinessAreas);
-  });
-  if (!shouldSeed) return;
-
-  const ref = collection(db, "users", uid, "businessAreas");
-  const batch = writeBatch(db);
-  DEFAULT_BUSINESS_AREAS.forEach(({ name, colorTag }, index) => {
-    const docRef = doc(ref);
-    batch.set(docRef, {
-      name,
-      colorTag,
-      archived: false,
-      order: index,
-      createdAt: serverTimestamp(),
-    });
-  });
-  await batch.commit();
-
-  await updateDoc(userRef, { hasSeededBusinessAreas: true });
-}
+// Sem seed automático — mesma decisão (e mesmo motivo) de use-action-types:
+// montagens simultâneas duplicavam o lote. Áreas padrão só por ação explícita,
+// via restoreDefaultBusinessAreas (idempotente por nome).
 
 export function useBusinessAreas() {
   const { user } = useAuth();
   const [businessAreas, setBusinessAreas] = useState<BusinessArea[]>([]);
   const [loading, setLoading] = useState(true);
-  const hasCheckedSeedRef = useRef(false);
 
   useEffect(() => {
     if (!user) return;
-    hasCheckedSeedRef.current = false;
     const ref = collection(db, "users", user.uid, "businessAreas");
     const unsubscribe = onSnapshot(ref, (snapshot) => {
       const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as BusinessArea);
       items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name, "pt-BR"));
       setBusinessAreas(items);
       setLoading(false);
-
-      if (!hasCheckedSeedRef.current) {
-        hasCheckedSeedRef.current = true;
-        if (snapshot.empty) {
-          void seedDefaultBusinessAreas(user.uid);
-        }
-      }
     });
     return unsubscribe;
   }, [user]);
@@ -91,12 +58,18 @@ export function useBusinessAreas() {
     if (!trimmed || isDuplicateName(trimmed)) return;
     const ref = collection(db, "users", user.uid, "businessAreas");
     const maxOrder = businessAreas.reduce((max, a) => Math.max(max, a.order ?? 0), -1);
-    await addDoc(ref, {
+    const created = await addDoc(ref, {
       name: trimmed,
       colorTag: colorTag ?? String(businessAreas.length % 8),
       archived: false,
       order: maxOrder + 1,
       createdAt: serverTimestamp(),
+    });
+    voidLog(db, user.uid, {
+      action: "create",
+      entity: "businessArea",
+      entityId: created.id,
+      label: trimmed,
     });
   }
 
@@ -122,16 +95,37 @@ export function useBusinessAreas() {
       batch.update(actionTypeDoc.ref, { area: trimmed });
     });
     await batch.commit();
+    voidLog(db, user.uid, {
+      action: "update",
+      entity: "businessArea",
+      entityId: id,
+      label: trimmed,
+      detail: `Renomeada de "${current.name}"`,
+    });
   }
 
   async function setBusinessAreaColor(id: string, colorTag: string) {
     if (!user) return;
     await updateDoc(doc(db, "users", user.uid, "businessAreas", id), { colorTag });
+    voidLog(db, user.uid, {
+      action: "update",
+      entity: "businessArea",
+      entityId: id,
+      label: businessAreas.find((a) => a.id === id)?.name ?? "Área",
+      detail: "Cor alterada",
+    });
   }
 
   async function setBusinessAreaArchived(id: string, archived: boolean) {
     if (!user) return;
     await updateDoc(doc(db, "users", user.uid, "businessAreas", id), { archived });
+    voidLog(db, user.uid, {
+      action: "update",
+      entity: "businessArea",
+      entityId: id,
+      label: businessAreas.find((a) => a.id === id)?.name ?? "Área",
+      detail: archived ? "Arquivada" : "Reativada",
+    });
   }
 
   /**
@@ -154,6 +148,15 @@ export function useBusinessAreas() {
     });
     batch.delete(doc(db, "users", user.uid, "businessAreas", id));
     await batch.commit();
+    // Snapshot vem do estado (o doc já foi lido pelo listener) — restaurar
+    // recria a área; o vínculo das categorias volta manualmente se preciso.
+    voidLog(db, user.uid, {
+      action: "delete",
+      entity: "businessArea",
+      entityId: id,
+      label: current.name,
+      snapshot: stripId(current),
+    });
   }
 
   /**

@@ -3,11 +3,13 @@ import { Sidebar } from "@/components/app-shell/sidebar";
 import { MobileNav } from "@/components/app-shell/mobile-nav";
 import { PageTransition } from "@/components/app-shell/page-transition";
 import { TimerReminder } from "@/components/app-shell/timer-reminder";
+import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGate>
       <TimerReminder />
+      <OnboardingWizard />
       <div className="flex min-h-full flex-1 bg-muted/20">
         <Sidebar />
         <div className="flex min-h-full flex-1 flex-col">

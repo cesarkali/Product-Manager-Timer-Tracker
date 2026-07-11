@@ -9,6 +9,14 @@ export const loginSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
+export const signupSchema = z.object({
+  name: z.string().min(2, "Como devemos te chamar?").max(80, "Nome muito longo"),
+  email: z.string().email("E-mail inválido"),
+  password: z.string().min(6, "Senha deve ter ao menos 6 caracteres"),
+});
+
+export type SignupInput = z.infer<typeof signupSchema>;
+
 export const actionTypeSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório").max(120, "Nome muito longo"),
 });
@@ -16,7 +24,7 @@ export const actionTypeSchema = z.object({
 export type ActionTypeInput = z.infer<typeof actionTypeSchema>;
 
 export const linkedTaskSchema = z.object({
-  type: z.enum(["jira", "movidesk"]),
+  type: z.enum(["jira", "movidesk", "link"]),
   reference: z.string().min(1, "Informe o link ou referência").max(300),
   storyPoints: z.union(
     STORY_POINT_OPTIONS.map((points) => z.literal(points)) as [

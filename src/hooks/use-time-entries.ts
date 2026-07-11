@@ -7,6 +7,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   onSnapshot,
   orderBy,
   query,
@@ -16,6 +17,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { voidLog } from "@/lib/activity-log";
 import type { DateRange } from "@/lib/time/ranges";
 import { DESCRIPTION_MAX_LENGTH, type LinkedTask, type TimeEntry } from "@/lib/types";
 
@@ -39,6 +41,13 @@ export interface ManualEntryData {
 function normalizeDescription(value: string | null | undefined): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed.slice(0, DESCRIPTION_MAX_LENGTH) : null;
+}
+
+/** Rótulo humano de um registro para o log de atividade. */
+function entryLabel(actionTypeName: string, start: Date): string {
+  return `${actionTypeName} — ${start.toLocaleDateString("pt-BR")} ${start
+    .toTimeString()
+    .slice(0, 5)}`;
 }
 
 export function useTimeEntries(range: DateRange) {
@@ -72,7 +81,7 @@ export function useTimeEntries(range: DateRange) {
       Math.round((data.endTime.getTime() - data.startTime.getTime()) / 1000) -
         (data.pausedSeconds ?? 0)
     );
-    await addDoc(collection(db, "users", user.uid, "timeEntries"), {
+    const ref = await addDoc(collection(db, "users", user.uid, "timeEntries"), {
       actionTypeId: data.actionTypeId,
       actionTypeName: data.actionTypeName,
       startTime: Timestamp.fromDate(data.startTime),
@@ -87,6 +96,13 @@ export function useTimeEntries(range: DateRange) {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    voidLog(db, user.uid, {
+      action: "create",
+      entity: "timeEntry",
+      entityId: ref.id,
+      label: entryLabel(data.actionTypeName, data.startTime),
+      detail: "Lançamento manual",
+    });
   }
 
   async function updateEntry(
@@ -97,6 +113,16 @@ export function useTimeEntries(range: DateRange) {
     await updateDoc(doc(db, "users", user.uid, "timeEntries", id), {
       ...patch,
       updatedAt: serverTimestamp(),
+    });
+    const current = entries.find((entry) => entry.id === id);
+    voidLog(db, user.uid, {
+      action: "update",
+      entity: "timeEntry",
+      entityId: id,
+      label: current
+        ? entryLabel(current.actionTypeName, current.startTime.toDate())
+        : "Registro",
+      detail: Object.keys(patch).join(", "),
     });
   }
 
@@ -122,11 +148,34 @@ export function useTimeEntries(range: DateRange) {
       description: normalizeDescription(data.description),
       updatedAt: serverTimestamp(),
     });
+    voidLog(db, user.uid, {
+      action: "update",
+      entity: "timeEntry",
+      entityId: id,
+      label: entryLabel(data.actionTypeName, data.startTime),
+      detail: "Edição completa",
+    });
   }
 
   async function deleteEntry(id: string) {
     if (!user) return;
-    await deleteDoc(doc(db, "users", user.uid, "timeEntries", id));
+    const ref = doc(db, "users", user.uid, "timeEntries", id);
+    // Snapshot ANTES de apagar — é ele que permite restaurar pelo log.
+    const snap = await getDoc(ref);
+    await deleteDoc(ref);
+    if (snap.exists()) {
+      const data = snap.data();
+      voidLog(db, user.uid, {
+        action: "delete",
+        entity: "timeEntry",
+        entityId: id,
+        label: entryLabel(
+          (data.actionTypeName as string) ?? "Registro",
+          (data.startTime as Timestamp).toDate()
+        ),
+        snapshot: data,
+      });
+    }
   }
 
   return { entries, loading, addManualEntry, updateEntry, updateEntryFull, deleteEntry };

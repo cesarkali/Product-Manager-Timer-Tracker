@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "PMTT Timer",
-  "version": "0.1.0",
-  "description": "Controle seu timer do PMTT, vincule tickets do Movidesk/Jira e receba sugestões automáticas de categoria no navegador.",
+  "version": "0.2.0",
+  "description": "Controle o timer do PMTT no navegador: atalhos, vínculo de tasks e links, e sugestões automáticas de categorias.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -19,17 +19,8 @@
   "options_page": "options.html",
   "permissions": ["storage", "alarms", "tabs", "notifications"],
   "host_permissions": [
-    "https://bitz.movidesk.com/*",
-    "https://bitzsoftwares.atlassian.net/*",
     "https://firestore.googleapis.com/*",
     "https://identitytoolkit.googleapis.com/*",
     "https://securetoken.googleapis.com/*"
-  ],
-  "content_scripts": [
-    {
-      "matches": ["https://bitz.movidesk.com/*", "https://bitzsoftwares.atlassian.net/*"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
-    }
   ]
 }

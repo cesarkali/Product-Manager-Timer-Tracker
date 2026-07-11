@@ -27,8 +27,18 @@ export default function RootLayout({
     <html
       lang="pt-BR"
       className={`dark ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      // O script abaixo muda atributos do <html> antes da hidratação (tema
+      // salvo) — sem isso o React reclama de mismatch server/client.
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
+        {/* Aplica tema/densidade/cantos salvos antes da hidratação — evita
+            piscar a aparência padrão. Temas claros removem a classe dark. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var d=document.documentElement,s=localStorage.getItem("pmtt-skin");if(s){d.setAttribute("data-skin",s);if(s==="claro"||s==="claro-neutro")d.classList.remove("dark")}var n=localStorage.getItem("pmtt-density");if(n)d.setAttribute("data-density",n);var c=localStorage.getItem("pmtt-corners");if(c)d.setAttribute("data-corners",c)}catch(e){}`,
+          }}
+        />
         <Providers>{children}</Providers>
       </body>
     </html>

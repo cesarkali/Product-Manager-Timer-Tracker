@@ -48,39 +48,42 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Identidade do PMTT: violeta da marca (o mesmo da extensão do Chrome) como
+   cor primária e superfícies levemente tingidas de índigo — sai o cinza puro,
+   entra personalidade, sem virar carnaval. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: oklch(0.977 0.005 286);
+  --foreground: oklch(0.17 0.015 282);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.17 0.015 282);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.17 0.015 282);
+  --primary: oklch(0.54 0.19 288);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.955 0.008 286);
+  --secondary-foreground: oklch(0.25 0.02 284);
+  --muted: oklch(0.955 0.008 286);
+  --muted-foreground: oklch(0.5 0.022 286);
+  --accent: oklch(0.945 0.015 288);
+  --accent-foreground: oklch(0.32 0.06 288);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --border: oklch(0.905 0.012 286);
+  --input: oklch(0.905 0.012 286);
+  --ring: oklch(0.54 0.19 288 / 55%);
+  --chart-1: oklch(0.54 0.19 288);
+  --chart-2: oklch(0.62 0.14 250);
+  --chart-3: oklch(0.65 0.14 165);
+  --chart-4: oklch(0.75 0.14 85);
+  --chart-5: oklch(0.64 0.17 350);
+  --radius: 0.75rem;
+  --sidebar: oklch(0.99 0.003 286);
+  --sidebar-foreground: oklch(0.17 0.015 282);
+  --sidebar-primary: oklch(0.54 0.19 288);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-accent: oklch(0.945 0.015 288);
+  --sidebar-accent-foreground: oklch(0.32 0.06 288);
+  --sidebar-border: oklch(0.905 0.012 286);
+  --sidebar-ring: oklch(0.54 0.19 288 / 55%);
 }
 
 .dark {
@@ -89,37 +92,320 @@
      toda a UI em CSS escura — é por isso que a barra de rolagem aparecia
      branca apesar do `.scrollbar-thin`. */
   color-scheme: dark;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0.155 0.018 282);
+  --foreground: oklch(0.965 0.005 286);
+  --card: oklch(0.195 0.022 282);
+  --card-foreground: oklch(0.965 0.005 286);
+  --popover: oklch(0.195 0.022 282);
+  --popover-foreground: oklch(0.965 0.005 286);
+  --primary: oklch(0.68 0.16 288);
+  --primary-foreground: oklch(0.16 0.03 285);
+  --secondary: oklch(0.255 0.024 283);
+  --secondary-foreground: oklch(0.965 0.005 286);
+  --muted: oklch(0.255 0.024 283);
+  --muted-foreground: oklch(0.72 0.02 286);
+  --accent: oklch(0.28 0.035 286);
+  --accent-foreground: oklch(0.92 0.03 288);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --border: oklch(0.9 0.03 286 / 13%);
+  --input: oklch(0.9 0.03 286 / 17%);
+  --ring: oklch(0.68 0.16 288 / 55%);
+  --chart-1: oklch(0.68 0.16 288);
+  --chart-2: oklch(0.68 0.13 250);
+  --chart-3: oklch(0.72 0.13 165);
+  --chart-4: oklch(0.8 0.13 85);
+  --chart-5: oklch(0.7 0.15 350);
+  --sidebar: oklch(0.175 0.02 282);
+  --sidebar-foreground: oklch(0.965 0.005 286);
+  --sidebar-primary: oklch(0.68 0.16 288);
+  --sidebar-primary-foreground: oklch(0.16 0.03 285);
+  --sidebar-accent: oklch(0.27 0.03 285);
+  --sidebar-accent-foreground: oklch(0.92 0.03 288);
+  --sidebar-border: oklch(0.9 0.03 286 / 13%);
+  --sidebar-ring: oklch(0.68 0.16 288 / 55%);
+}
+
+/* ── Skins (temas completos) ──────────────────────────────────────
+   O usuário escolhe em Configurações → Preferências; o valor vive em
+   localStorage ("pmtt-skin") e vira o atributo data-skin no <html>.
+   Cada skin retinge o tema INTEIRO — fundo, cards, bordas, sidebar e
+   destaque. Temas claros removem a classe .dark (ver boot script no
+   RootLayout e useSkin). */
+.dark[data-skin="oceano"] {
+  --background: oklch(0.16 0.033 250);
+  --foreground: oklch(0.965 0.006 250);
+  --card: oklch(0.205 0.04 250);
+  --card-foreground: oklch(0.965 0.006 250);
+  --popover: oklch(0.205 0.04 250);
+  --popover-foreground: oklch(0.965 0.006 250);
+  --primary: oklch(0.66 0.15 250);
+  --primary-foreground: oklch(0.15 0.03 250);
+  --secondary: oklch(0.265 0.045 250);
+  --secondary-foreground: oklch(0.965 0.006 250);
+  --muted: oklch(0.265 0.045 250);
+  --muted-foreground: oklch(0.73 0.025 250);
+  --accent: oklch(0.29 0.05 250);
+  --accent-foreground: oklch(0.93 0.035 250);
+  --border: oklch(0.9 0.045 250 / 14%);
+  --input: oklch(0.9 0.045 250 / 18%);
+  --ring: oklch(0.66 0.15 250 / 55%);
+  --chart-1: oklch(0.66 0.15 250);
+  --sidebar: oklch(0.18 0.036 250);
+  --sidebar-foreground: oklch(0.965 0.006 250);
+  --sidebar-primary: oklch(0.66 0.15 250);
+  --sidebar-primary-foreground: oklch(0.15 0.03 250);
+  --sidebar-accent: oklch(0.28 0.045 250);
+  --sidebar-accent-foreground: oklch(0.93 0.035 250);
+  --sidebar-border: oklch(0.9 0.045 250 / 14%);
+  --sidebar-ring: oklch(0.66 0.15 250 / 55%);
+}
+
+.dark[data-skin="ciano"] {
+  --background: oklch(0.16 0.033 213);
+  --foreground: oklch(0.965 0.006 213);
+  --card: oklch(0.205 0.04 213);
+  --card-foreground: oklch(0.965 0.006 213);
+  --popover: oklch(0.205 0.04 213);
+  --popover-foreground: oklch(0.965 0.006 213);
+  --primary: oklch(0.73 0.12 210);
+  --primary-foreground: oklch(0.16 0.03 210);
+  --secondary: oklch(0.265 0.045 213);
+  --secondary-foreground: oklch(0.965 0.006 213);
+  --muted: oklch(0.265 0.045 213);
+  --muted-foreground: oklch(0.73 0.025 213);
+  --accent: oklch(0.29 0.05 213);
+  --accent-foreground: oklch(0.93 0.035 213);
+  --border: oklch(0.9 0.045 213 / 14%);
+  --input: oklch(0.9 0.045 213 / 18%);
+  --ring: oklch(0.73 0.12 210 / 55%);
+  --chart-1: oklch(0.73 0.12 210);
+  --sidebar: oklch(0.18 0.036 213);
+  --sidebar-foreground: oklch(0.965 0.006 213);
+  --sidebar-primary: oklch(0.73 0.12 210);
+  --sidebar-primary-foreground: oklch(0.16 0.03 210);
+  --sidebar-accent: oklch(0.28 0.045 213);
+  --sidebar-accent-foreground: oklch(0.93 0.035 213);
+  --sidebar-border: oklch(0.9 0.045 213 / 14%);
+  --sidebar-ring: oklch(0.73 0.12 210 / 55%);
+}
+
+.dark[data-skin="esmeralda"] {
+  --background: oklch(0.16 0.033 168);
+  --foreground: oklch(0.965 0.006 168);
+  --card: oklch(0.205 0.04 168);
+  --card-foreground: oklch(0.965 0.006 168);
+  --popover: oklch(0.205 0.04 168);
+  --popover-foreground: oklch(0.965 0.006 168);
+  --primary: oklch(0.7 0.13 165);
+  --primary-foreground: oklch(0.15 0.03 165);
+  --secondary: oklch(0.265 0.045 168);
+  --secondary-foreground: oklch(0.965 0.006 168);
+  --muted: oklch(0.265 0.045 168);
+  --muted-foreground: oklch(0.73 0.025 168);
+  --accent: oklch(0.29 0.05 168);
+  --accent-foreground: oklch(0.93 0.035 168);
+  --border: oklch(0.9 0.045 168 / 14%);
+  --input: oklch(0.9 0.045 168 / 18%);
+  --ring: oklch(0.7 0.13 165 / 55%);
+  --chart-1: oklch(0.7 0.13 165);
+  --sidebar: oklch(0.18 0.036 168);
+  --sidebar-foreground: oklch(0.965 0.006 168);
+  --sidebar-primary: oklch(0.7 0.13 165);
+  --sidebar-primary-foreground: oklch(0.15 0.03 165);
+  --sidebar-accent: oklch(0.28 0.045 168);
+  --sidebar-accent-foreground: oklch(0.93 0.035 168);
+  --sidebar-border: oklch(0.9 0.045 168 / 14%);
+  --sidebar-ring: oklch(0.7 0.13 165 / 55%);
+}
+
+.dark[data-skin="ambar"] {
+  --background: oklch(0.16 0.025 80);
+  --foreground: oklch(0.965 0.006 80);
+  --card: oklch(0.205 0.03 80);
+  --card-foreground: oklch(0.965 0.006 80);
+  --popover: oklch(0.205 0.03 80);
+  --popover-foreground: oklch(0.965 0.006 80);
+  --primary: oklch(0.78 0.13 80);
+  --primary-foreground: oklch(0.2 0.04 80);
+  --secondary: oklch(0.265 0.034 80);
+  --secondary-foreground: oklch(0.965 0.006 80);
+  --muted: oklch(0.265 0.034 80);
+  --muted-foreground: oklch(0.73 0.025 80);
+  --accent: oklch(0.29 0.038 80);
+  --accent-foreground: oklch(0.93 0.035 80);
+  --border: oklch(0.9 0.045 80 / 14%);
+  --input: oklch(0.9 0.045 80 / 18%);
+  --ring: oklch(0.78 0.13 80 / 55%);
+  --chart-1: oklch(0.78 0.13 80);
+  --sidebar: oklch(0.18 0.027 80);
+  --sidebar-foreground: oklch(0.965 0.006 80);
+  --sidebar-primary: oklch(0.78 0.13 80);
+  --sidebar-primary-foreground: oklch(0.2 0.04 80);
+  --sidebar-accent: oklch(0.28 0.034 80);
+  --sidebar-accent-foreground: oklch(0.93 0.035 80);
+  --sidebar-border: oklch(0.9 0.045 80 / 14%);
+  --sidebar-ring: oklch(0.78 0.13 80 / 55%);
+}
+
+.dark[data-skin="rosa"] {
+  --background: oklch(0.16 0.033 350);
+  --foreground: oklch(0.965 0.006 350);
+  --card: oklch(0.205 0.04 350);
+  --card-foreground: oklch(0.965 0.006 350);
+  --popover: oklch(0.205 0.04 350);
+  --popover-foreground: oklch(0.965 0.006 350);
+  --primary: oklch(0.7 0.16 350);
+  --primary-foreground: oklch(0.16 0.04 350);
+  --secondary: oklch(0.265 0.045 350);
+  --secondary-foreground: oklch(0.965 0.006 350);
+  --muted: oklch(0.265 0.045 350);
+  --muted-foreground: oklch(0.73 0.025 350);
+  --accent: oklch(0.29 0.05 350);
+  --accent-foreground: oklch(0.93 0.035 350);
+  --border: oklch(0.9 0.045 350 / 14%);
+  --input: oklch(0.9 0.045 350 / 18%);
+  --ring: oklch(0.7 0.16 350 / 55%);
+  --chart-1: oklch(0.7 0.16 350);
+  --sidebar: oklch(0.18 0.036 350);
+  --sidebar-foreground: oklch(0.965 0.006 350);
+  --sidebar-primary: oklch(0.7 0.16 350);
+  --sidebar-primary-foreground: oklch(0.16 0.04 350);
+  --sidebar-accent: oklch(0.28 0.045 350);
+  --sidebar-accent-foreground: oklch(0.93 0.035 350);
+  --sidebar-border: oklch(0.9 0.045 350 / 14%);
+  --sidebar-ring: oklch(0.7 0.16 350 / 55%);
+}
+
+.dark[data-skin="vermelho"] {
+  --background: oklch(0.16 0.028 25);
+  --foreground: oklch(0.965 0.006 25);
+  --card: oklch(0.205 0.034 25);
+  --card-foreground: oklch(0.965 0.006 25);
+  --popover: oklch(0.205 0.034 25);
+  --popover-foreground: oklch(0.965 0.006 25);
+  --primary: oklch(0.66 0.18 25);
+  --primary-foreground: oklch(0.98 0.005 25);
+  --secondary: oklch(0.265 0.038 25);
+  --secondary-foreground: oklch(0.965 0.006 25);
+  --muted: oklch(0.265 0.038 25);
+  --muted-foreground: oklch(0.73 0.025 25);
+  --accent: oklch(0.29 0.043 25);
+  --accent-foreground: oklch(0.93 0.035 25);
+  --border: oklch(0.9 0.045 25 / 14%);
+  --input: oklch(0.9 0.045 25 / 18%);
+  --ring: oklch(0.66 0.18 25 / 55%);
+  --chart-1: oklch(0.66 0.18 25);
+  --sidebar: oklch(0.18 0.031 25);
+  --sidebar-foreground: oklch(0.965 0.006 25);
+  --sidebar-primary: oklch(0.66 0.18 25);
+  --sidebar-primary-foreground: oklch(0.98 0.005 25);
+  --sidebar-accent: oklch(0.28 0.038 25);
+  --sidebar-accent-foreground: oklch(0.93 0.035 25);
+  --sidebar-border: oklch(0.9 0.045 25 / 14%);
+  --sidebar-ring: oklch(0.66 0.18 25 / 55%);
+}
+
+.dark[data-skin="meia-noite"] {
+  --background: oklch(0.11 0.012 282);
+  --foreground: oklch(0.96 0.005 286);
+  --card: oklch(0.15 0.016 282);
+  --card-foreground: oklch(0.96 0.005 286);
+  --popover: oklch(0.15 0.016 282);
+  --popover-foreground: oklch(0.96 0.005 286);
+  --primary: oklch(0.68 0.16 288);
+  --primary-foreground: oklch(0.16 0.03 285);
+  --secondary: oklch(0.2 0.02 283);
+  --secondary-foreground: oklch(0.96 0.005 286);
+  --muted: oklch(0.2 0.02 283);
+  --muted-foreground: oklch(0.68 0.02 286);
+  --accent: oklch(0.23 0.03 286);
+  --accent-foreground: oklch(0.92 0.03 288);
+  --border: oklch(0.9 0.03 286 / 10%);
+  --input: oklch(0.9 0.03 286 / 14%);
+  --ring: oklch(0.68 0.16 288 / 55%);
+  --chart-1: oklch(0.68 0.16 288);
+  --sidebar: oklch(0.13 0.014 282);
+  --sidebar-foreground: oklch(0.96 0.005 286);
+  --sidebar-primary: oklch(0.68 0.16 288);
+  --sidebar-primary-foreground: oklch(0.16 0.03 285);
+  --sidebar-accent: oklch(0.22 0.028 285);
+  --sidebar-accent-foreground: oklch(0.92 0.03 288);
+  --sidebar-border: oklch(0.9 0.03 286 / 10%);
+  --sidebar-ring: oklch(0.68 0.16 288 / 55%);
+}
+
+.dark[data-skin="grafite"] {
+  --background: oklch(0.15 0 0);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(0.19 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.19 0 0);
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: oklch(0.85 0 0);
+  --primary-foreground: oklch(0.18 0 0);
+  --secondary: oklch(0.25 0 0);
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: oklch(0.25 0 0);
+  --muted-foreground: oklch(0.7 0 0);
+  --accent: oklch(0.28 0 0);
+  --accent-foreground: oklch(0.95 0 0);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.7 0 0 / 55%);
+  --chart-1: oklch(0.85 0 0);
+  --sidebar: oklch(0.17 0 0);
+  --sidebar-foreground: oklch(0.97 0 0);
+  --sidebar-primary: oklch(0.85 0 0);
+  --sidebar-primary-foreground: oklch(0.18 0 0);
+  --sidebar-accent: oklch(0.27 0 0);
+  --sidebar-accent-foreground: oklch(0.95 0 0);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.7 0 0 / 55%);
+}
+
+/* Temas claros: o boot script e o useSkin removem a classe .dark — o tema
+   "claro" usa os tokens padrão do :root (violeta claro); o "claro-neutro"
+   neutraliza o matiz. */
+:root[data-skin="claro-neutro"] {
+  --background: oklch(0.975 0 0);
+  --foreground: oklch(0.17 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.17 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.17 0 0);
+  --primary: oklch(0.25 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.955 0 0);
+  --secondary-foreground: oklch(0.25 0 0);
+  --muted: oklch(0.955 0 0);
+  --muted-foreground: oklch(0.5 0 0);
+  --accent: oklch(0.94 0 0);
+  --accent-foreground: oklch(0.25 0 0);
+  --border: oklch(0.9 0 0);
+  --input: oklch(0.9 0 0);
+  --ring: oklch(0.5 0 0 / 55%);
+  --chart-1: oklch(0.4 0 0);
+  --sidebar: oklch(0.99 0 0);
+  --sidebar-foreground: oklch(0.17 0 0);
+  --sidebar-primary: oklch(0.25 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-accent: oklch(0.94 0 0);
+  --sidebar-accent-foreground: oklch(0.25 0 0);
+  --sidebar-border: oklch(0.9 0 0);
+  --sidebar-ring: oklch(0.5 0 0 / 55%);
+}
+
+/* ── Opções de layout ─────────────────────────────────────────────
+   Densidade: compacto reduz a base rem → tudo (paddings, fontes, cards)
+   encolhe proporcionalmente. Cantos: só muda o raio-base dos componentes. */
+:root[data-density="compacto"] {
+  font-size: 84%;
+}
+:root[data-corners="reto"] {
+  --radius: 0.15rem;
+}
+:root[data-corners="redondo"] {
+  --radius: 1.4rem;
 }
 
 @layer base {
@@ -128,6 +414,19 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Brilho de marca no fundo — sutil, fixo no viewport, some na impressão. */
+    background-image:
+      radial-gradient(
+        45% 35% at 85% -5%,
+        color-mix(in oklch, var(--primary) 8%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        40% 40% at -10% 105%,
+        color-mix(in oklch, var(--primary) 6%, transparent),
+        transparent 70%
+      );
+    background-attachment: fixed;
   }
   html {
     @apply font-sans;
@@ -182,6 +481,76 @@
   }
 }
 
+/* Campos da tela de login (AuthField): input transparente — a moldura, o
+   ícone, o rótulo e o sublinhado animado vivem no wrapper. */
+.auth-input {
+  width: 100%;
+  height: 3.5rem;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 1.15rem 0.9rem 0 2.75rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  font-family: inherit;
+}
+.auth-input::placeholder {
+  color: color-mix(in oklch, var(--muted-foreground) 65%, transparent);
+}
+/* Autofill do Chrome pinta o fundo de azul/branco — neutraliza. */
+.auth-input:-webkit-autofill {
+  -webkit-text-fill-color: var(--foreground);
+  -webkit-box-shadow: 0 0 0 1000px transparent inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* Orbes flutuantes da tela de login — movimento lento e compositor-friendly
+   (só transform). */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(-24px) translateX(12px);
+  }
+}
+.animate-float {
+  animation: float 9s ease-in-out infinite;
+}
+.animate-float-slow {
+  animation: float 14s ease-in-out infinite reverse;
+}
+
+/* Aurora da tela de login: um cone de luz da marca girando bem devagar atrás
+   do conteúdo (só transform — barato para o compositor). */
+@keyframes aurora {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-aurora {
+  animation: aurora 32s linear infinite;
+}
+
+/* Brilho percorrendo o texto com gradiente (headline do login). */
+@keyframes shimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+.animate-shimmer {
+  background-size: 200% auto;
+  animation: shimmer 6s ease-in-out infinite;
+}
+
 /* Acessibilidade: quem pediu menos movimento não recebe animação decorativa. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -226,6 +595,7 @@
 
   body {
     background: white;
+    background-image: none;
   }
 
   .print-compact .py-6 {

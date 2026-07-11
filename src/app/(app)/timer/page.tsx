@@ -76,6 +76,7 @@ export default function TimerPage() {
         }
       />
 
+      <div data-tour="timer-card">
       <TimerCard
         actionType={activeActionType}
         startTimeMs={activeTimer?.startTime ? activeTimer.startTime.toMillis() : null}
@@ -93,8 +94,9 @@ export default function TimerPage() {
         onFieldsChange={updateActiveTimerFields}
         onAdjustStartTime={adjustStartTime}
       />
+      </div>
 
-      <div className="flex flex-col gap-2">
+      <div data-tour="day-timeline" className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">Linha do dia</h2>
         <DayTimeline
           entries={todayEntries}
@@ -116,7 +118,7 @@ export default function TimerPage() {
         />
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div data-tour="categories" className="flex flex-col gap-4">
         <div>
           <h2 className="text-lg font-semibold">Categorias</h2>
           <p className="text-sm text-muted-foreground">

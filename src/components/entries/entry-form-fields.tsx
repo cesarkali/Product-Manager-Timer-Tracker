@@ -256,7 +256,7 @@ export function EntryFormFields({
         <Label>Tasks vinculadas (opcional)</Label>
         <LinkedTasksEditor
           items={taskFields}
-          onAdd={() => append({ type: "jira", reference: "", storyPoints: 0 })}
+          onAdd={() => append({ type: "link", reference: "", storyPoints: 0 })}
           onRemove={remove}
           onChangeItem={(index, patch) => update(index, { ...taskFields[index], ...patch })}
         />

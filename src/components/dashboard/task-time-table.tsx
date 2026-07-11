@@ -4,7 +4,7 @@ import { ExternalLink } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatDuration } from "@/lib/time/format";
-import type { LinkedTask } from "@/lib/types";
+import { TASK_TYPE_LABELS, type LinkedTask } from "@/lib/types";
 
 export interface TaskAggregate {
   /** Referência original (primeira ocorrência); agrupamento é case-insensitive. */
@@ -17,11 +17,6 @@ export interface TaskAggregate {
   /** Story points da task (máximo entre as ocorrências, evita somar 2x). */
   storyPoints: number;
 }
-
-const TASK_TYPE_LABEL: Record<LinkedTask["type"], string> = {
-  jira: "Jira",
-  movidesk: "Movidesk",
-};
 
 /** Evidência direta de "entreguei X tasks": cada task trabalhada no período,
  * com o tempo somado e o número de sessões. */
@@ -78,7 +73,7 @@ export function TaskTimeTable({ data }: { data: TaskAggregate[] }) {
                   )}
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">{TASK_TYPE_LABEL[task.type]}</Badge>
+                  <Badge variant="outline">{TASK_TYPE_LABELS[task.type]}</Badge>
                 </TableCell>
                 <TableCell>
                   <span className="font-mono text-xs font-medium tabular-nums">

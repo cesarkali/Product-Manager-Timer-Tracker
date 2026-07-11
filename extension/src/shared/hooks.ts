@@ -142,3 +142,65 @@ function applyTheme(t: Theme) {
   document.documentElement.classList.toggle("light", t === "light");
 }
 
+// ── Skins (temas de cor) — os mesmos do PMTT web ────────────────────────────
+
+export interface ExtSkin {
+  id: string;
+  label: string;
+  swatch: string;
+}
+
+export const EXT_SKINS: ExtSkin[] = [
+  { id: "violeta", label: "Violeta", swatch: "oklch(0.68 0.16 288)" },
+  { id: "oceano", label: "Oceano", swatch: "oklch(0.66 0.15 250)" },
+  { id: "ciano", label: "Ciano", swatch: "oklch(0.73 0.12 210)" },
+  { id: "esmeralda", label: "Esmeralda", swatch: "oklch(0.7 0.13 165)" },
+  { id: "ambar", label: "Âmbar", swatch: "oklch(0.78 0.13 80)" },
+  { id: "rosa", label: "Rosa", swatch: "oklch(0.7 0.16 350)" },
+  { id: "vermelho", label: "Vermelho", swatch: "oklch(0.66 0.18 25)" },
+  { id: "meia-noite", label: "Meia-noite", swatch: "oklch(0.2 0.02 282)" },
+  { id: "grafite", label: "Grafite", swatch: "oklch(0.45 0 0)" },
+];
+
+const DEFAULT_SKIN = "violeta";
+
+function applySkinAttr(id: string) {
+  if (id === DEFAULT_SKIN) document.documentElement.removeAttribute("data-skin");
+  else document.documentElement.setAttribute("data-skin", id);
+}
+
+/** Skin persistida em chrome.storage.local ("pmtt-skin") — popup e opções
+ * leem na montagem e reagem ao vivo se a outra página trocar. */
+export function useSkin(): [string, (id: string) => void] {
+  const [skin, setSkinState] = useState<string>(DEFAULT_SKIN);
+
+  useEffect(() => {
+    void chrome.storage.local.get("pmtt-skin").then((stored) => {
+      const saved = stored["pmtt-skin"] as string | undefined;
+      const resolved = saved && EXT_SKINS.some((s) => s.id === saved) ? saved : DEFAULT_SKIN;
+      setSkinState(resolved);
+      applySkinAttr(resolved);
+    });
+    const listener = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      area: string
+    ) => {
+      if (area === "local" && changes["pmtt-skin"]) {
+        const next = (changes["pmtt-skin"].newValue as string | undefined) ?? DEFAULT_SKIN;
+        setSkinState(next);
+        applySkinAttr(next);
+      }
+    };
+    chrome.storage.onChanged.addListener(listener);
+    return () => chrome.storage.onChanged.removeListener(listener);
+  }, []);
+
+  function setSkin(id: string) {
+    setSkinState(id);
+    applySkinAttr(id);
+    void chrome.storage.local.set({ "pmtt-skin": id });
+  }
+
+  return [skin, setSkin];
+}
+

@@ -1,104 +1,59 @@
-import React from "react";
 import type { Metadata } from "next";
+import { ShieldCheck } from "lucide-react";
+import { TermsContent } from "@/components/legal/terms-content";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidade | PMTT Timer",
-  description: "Política de Privacidade da extensão PMTT Timer.",
+  title: "Termos de Uso e Privacidade | PMTT",
+  description:
+    "Termos de Uso e Política de Privacidade do PMTT — plataforma de registro de tempo e extensão do Chrome.",
 };
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="max-w-3xl mx-auto bg-white dark:bg-zinc-900 shadow-sm rounded-lg p-8 sm:p-10 border border-zinc-200 dark:border-zinc-800">
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-6">
-          Política de Privacidade - PMTT Timer
-        </h1>
-        <p className="text-zinc-500 dark:text-zinc-400 mb-8 text-sm">
-          Última atualização: 10 de julho de 2026
-        </p>
-
-        <div className="space-y-6 text-zinc-700 dark:text-zinc-300 leading-relaxed">
-          <section>
-            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
-              1. Visão Geral
-            </h2>
-            <p>
-              O PMTT Timer é uma ferramenta de uso interno projetada para
-              facilitar o apontamento de horas e o fluxo de trabalho da equipe.
-              Esta Política de Privacidade descreve como os seus dados são
-              coletados, usados e protegidos.
+    <div className="relative min-h-svh px-4 py-12 sm:px-6 lg:px-8">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-50"
+        style={{
+          background:
+            "radial-gradient(50% 30% at 50% 0%, color-mix(in oklch, var(--primary) 12%, transparent), transparent 70%)",
+        }}
+      />
+      <div className="relative mx-auto max-w-3xl rounded-3xl border bg-card p-8 shadow-xl sm:p-10">
+        <div className="mb-8 flex items-start gap-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/25">
+            <ShieldCheck className="h-6 w-6 text-primary-foreground" />
+          </span>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              Termos de Uso e Política de Privacidade
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              PMTT — Product Manager Time Tracker (plataforma web e extensão do Chrome)
             </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
-              2. Dados Coletados
-            </h2>
-            <p className="mb-2">A extensão coleta estritamente o necessário para o seu funcionamento:</p>
-            <ul className="list-disc pl-6 space-y-2">
-              <li>
-                <strong>Informações de Autenticação:</strong> Seu endereço de
-                e-mail utilizado para fazer login no sistema e o token de
-                autenticação gerado pelo Firebase.
-              </li>
-              <li>
-                <strong>Conteúdo do Site (Host):</strong> Ao navegar no Movidesk
-                ou Jira, a extensão lê o ID do ticket/issue na tela para sugerir
-                vínculos automáticos com o seu cronômetro.
-              </li>
-              <li>
-                <strong>Registros de Tempo:</strong> As tarefas iniciadas, pausadas,
-                descrições, comentários e a duração de cada apontamento.
-              </li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
-              3. Uso dos Dados
-            </h2>
-            <p>
-              Todos os dados coletados têm um único propósito: garantir o
-              funcionamento da aplicação (salvar seus registros de horas e
-              sincronizá-los com sua conta). Nossos sistemas não realizam
-              rastreamento oculto (tracking) de outras abas ou navegação web que
-              não sejam os domínios corporativos explícitos (Movidesk/Jira).
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
-              4. Compartilhamento e Venda de Dados
-            </h2>
-            <p>
-              Declaramos expressamente que <strong>NÃO</strong> vendemos,
-              alugamos ou transferimos qualquer dado coletado dos usuários para
-              terceiros. Os dados são mantidos em banco de dados privado
-              (Firebase/Firestore) exclusivo para as métricas internas da empresa.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
-              5. Segurança
-            </h2>
-            <p>
-              Implementamos regras rigorosas de segurança em nosso banco de dados
-              para garantir que um usuário autenticado só possa acessar e
-              modificar os seus próprios registros de horas.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
-              6. Contato
-            </h2>
-            <p>
-              Caso tenha dúvidas sobre como seus dados estão sendo tratados,
-              entre em contato com os administradores do sistema internamente.
-            </p>
-          </section>
+          </div>
         </div>
+        <TermsContent />
+        <p className="mt-10 border-t pt-5 text-center text-xs text-muted-foreground">
+          Powered by{" "}
+          <a
+            href="https://caliberda.com.br"
+            target="_blank"
+            rel="noreferrer"
+            className="underline-offset-2 hover:text-foreground hover:underline"
+          >
+            caliberda.com.br
+          </a>{" "}
+          ·{" "}
+          <a
+            href="https://instagram.com/cesar.kali"
+            target="_blank"
+            rel="noreferrer"
+            className="underline-offset-2 hover:text-foreground hover:underline"
+          >
+            @cesar.kali
+          </a>
+        </p>
       </div>
     </div>
   );

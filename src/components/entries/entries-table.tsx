@@ -8,12 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { CategoryIcon } from "@/lib/icons";
 import { categoryColor } from "@/lib/palette";
 import { formatDateTimeLabel, formatDuration } from "@/lib/time/format";
-import type { ActionType, LinkedTask, TimeEntry } from "@/lib/types";
-
-const TASK_TYPE_LABEL: Record<LinkedTask["type"], string> = {
-  jira: "Jira",
-  movidesk: "Movidesk",
-};
+import { TASK_TYPE_LABELS, type ActionType, type TimeEntry } from "@/lib/types";
 
 const TOOLTIP_NOTES_LIMIT = 300;
 
@@ -126,12 +121,12 @@ export function EntriesTable({
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-primary hover:underline"
                           >
-                            {TASK_TYPE_LABEL[task.type]} <ExternalLink className="h-3 w-3" />
+                            {TASK_TYPE_LABELS[task.type]} <ExternalLink className="h-3 w-3" />
                             <Badge variant="outline">SP {task.storyPoints}</Badge>
                           </a>
                         ) : (
                           <div key={index} className="inline-flex items-center gap-1">
-                            {TASK_TYPE_LABEL[task.type]}: {task.reference}
+                            {TASK_TYPE_LABELS[task.type]}: {task.reference}
                             <Badge variant="outline">SP {task.storyPoints}</Badge>
                           </div>
                         )

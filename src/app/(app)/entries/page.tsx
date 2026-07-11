@@ -56,7 +56,7 @@ export default function EntriesPage() {
         }
       />
 
-      <Card>
+      <Card data-tour="manual-entry">
         <CardHeader>
           <CardTitle className="text-base">Lançar manualmente</CardTitle>
         </CardHeader>
@@ -65,7 +65,7 @@ export default function EntriesPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card data-tour="entries-table">
         <CardContent>
           <EntriesTable
             entries={entries}
